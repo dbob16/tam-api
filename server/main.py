@@ -189,3 +189,59 @@ def post_basket(prefix:str, b:Basket):
         return {"success": True, "posted_basket": f"Prefix: {prefix} Details: {b.basket_id} {b.description} {b.donors} {b.winning_ticket}"}
     except Exception as e:
         return {"success": False, "exception": e}
+
+@app.get("/combined/{prefix}/")
+def combined_all(prefix:str):
+    prefix = prefix.lower()
+    conn, cur = session()
+    cur.execute(f"""SELECT b.basket_id, b.description, b.donors, b.winning_ticket, t.first_name, t.last_name, t.phone_number, t.preference
+    FROM '{prefix}_baskets' b
+    INNER JOIN '{prefix}_tickets' t
+    ON b.winning_ticket = t.ticket_id
+    ORDER BY b.basket_id""")
+    results = cur.fetchall()
+    if results:
+        r_l = []
+        for r in results:
+            r_d = {"basket_id": r[0], "description": r[1], "donors": r[2], "winning_ticket": r[3], "first_name": r[4], "last_name": r[5], "phone_number": r[6], "preference": r[7]}
+            r_l.append(r_d)
+        return r_l
+    else:
+        return []
+
+@app.get("/combined/{prefix}/{basket_id}/")
+def combined_single(prefix:str, basket_id:int):
+    prefix = prefix.lower()
+    conn, cur = session()
+    cur.execute(f"""SELECT b.basket_id, b.description, b.donors, b.winning_ticket, t.first_name, t.last_name, t.phone_number, t.preference
+    FROM '{prefix}_baskets' b
+    INNER JOIN '{prefix}_tickets' t
+    ON b.winning_ticket = t.ticket_id
+    WHERE basket_id = {basket_id}
+    ORDER BY b.basket_id""")
+    r = cur.fetchone()
+    if r:
+        r_d = {"basket_id": r[0], "description": r[1], "donors": r[2], "winning_ticket": r[3], "first_name": r[4], "last_name": r[5], "phone_number": r[6], "preference": r[7]}
+        return r_d
+    else:
+        return []
+
+@app.get("/combined/{prefix}/{id_from}/{id_to}/")
+def combined_range(prefix:str, id_from:int, id_to:int):
+    prefix = prefix.lower()
+    conn, cur = session()
+    cur.execute(f"""SELECT b.basket_id, b.description, b.donors, b.winning_ticket, t.first_name, t.last_name, t.phone_number, t.preference
+    FROM '{prefix}_baskets' b
+    INNER JOIN '{prefix}_tickets' t
+    ON b.winning_ticket = t.ticket_id
+    WHERE basket_id BETWEEN {id_from} AND {id_to}
+    ORDER BY b.basket_id""")
+    results = cur.fetchall()
+    if results:
+        r_l = []
+        for r in results:
+            r_d = {"basket_id": r[0], "description": r[1], "donors": r[2], "winning_ticket": r[3], "first_name": r[4], "last_name": r[5], "phone_number": r[6], "preference": r[7]}
+            r_l.append(r_d)
+        return r_l
+    else:
+        return []

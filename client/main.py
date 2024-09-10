@@ -301,6 +301,374 @@ def main():
 
         txt_from.focus()
 
+    def cmd_basket_form():
+        prefix = cmb_prefix.get().lower()
+        bootstyle = prefixes[prefix]["bootstyle"]
+        window = ttk.Toplevel(title=f"{prefix.capitalize()} Baskets")
+        v_from, v_to = ttk.IntVar(window), ttk.IntVar(window)
+        v_id, v_de, v_do, v_wt = ttk.IntVar(window), ttk.StringVar(window), ttk.StringVar(window), ttk.IntVar(window)
+        save_record = []
+        
+        def cmd_set_call(_=None):
+            v_pref.set("CALL")
+        
+        def cmd_set_text(_=None):
+            v_pref.set("TEXT")
+
+        def cmd_tv_select(_=None):
+            for s in tview.selection():
+                r = tview.item(s)["values"]
+                v_id.set(r[0]), v_de.set(r[1]), v_do.set(r[2]), v_wt.set(r[3])
+
+        def cmd_update_all(_=None):
+            tview.delete(*tview.get_children())
+            for i in range(v_from.get(), v_to.get()+1):
+                tview.insert("", "end", iid=i, values=(i, "", "", 0))
+            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
+            if results:
+                for r in results:
+                    tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"]))
+            if v_id.get() < v_from.get():
+                v_id.set(v_from.get())
+            if v_id.get() > v_to.get():
+                v_id.set(v_to.get())
+            tview.selection_set(v_id.get())
+            txt_de.focus()
+
+        def cmd_prev_page(_=None):
+            diff = v_to.get()-v_from.get()+1
+            v_from.set(v_from.get()-diff), v_to.set(v_to.get()-diff)
+            cmd_update_all()
+
+        def cmd_next_page(_=None):
+            diff = v_to.get()-v_from.get()+1
+            v_from.set(v_from.get()+diff), v_to.set(v_to.get()+diff)
+            cmd_update_all()
+
+        def cmd_save(_=None):
+            if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
+                s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
+                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item).json()
+                if result["success"] == True:
+                    tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get()))
+
+        def cmd_copy(_=None):
+            save_record.clear()
+            for c in (v_de, v_do):
+                save_record.append(c.get())
+        
+        def cmd_paste(_=None):
+            index = 0
+            for c in (v_de, v_do):
+                c.set(save_record[index])
+                index += 1
+            cmd_save()
+
+        def cmd_move_up(_=None):
+            cmd_save()
+            if v_id.get() > v_from.get():
+                v_id.set(v_id.get()-1)
+                tview.selection_set(v_id.get())
+            txt_de.focus()
+
+        def cmd_move_down(_=None):
+            cmd_save()
+            if v_id.get() < v_to.get():
+                v_id.set(v_id.get()+1)
+                tview.selection_set(v_id.get())
+            txt_de.focus()
+
+        def cmd_dup_up(_=None):
+            cmd_copy()
+            cmd_move_up()
+            cmd_paste()
+
+        def cmd_dup_down(_=None):
+            cmd_copy()
+            cmd_move_down()
+            cmd_paste()
+
+        frm_ranger = ttk.LabelFrame(window, text="Range Control")
+        frm_ranger.pack(padx=4, pady=4, fill="x")
+
+        lbl_from = ttk.Label(frm_ranger, text="Range: ")
+        lbl_from.pack(side="left", padx=4, pady=4)
+
+        txt_from = ttk.Entry(frm_ranger, textvariable=v_from, width=10)
+        txt_from.pack(side="left", padx=4, pady=4)
+
+        lbl_to = ttk.Label(frm_ranger, text=" - ")
+        lbl_to.pack(side="left", padx=4, pady=4)
+
+        txt_to = ttk.Entry(frm_ranger, textvariable=v_to, width=10)
+        txt_to.pack(side="left", padx=4, pady=4)
+
+        btn_go = ttk.Button(frm_ranger, text="Go", command=cmd_update_all, bootstyle=bootstyle)
+        btn_go.pack(side="left", padx=4, pady=4)
+
+        btn_next_page = ttk.Button(frm_ranger, text="Next Page - Alt N", command=cmd_next_page, bootstyle=bootstyle)
+        btn_next_page.pack(side="right", padx=4, pady=4)
+        window.bind("<Alt-n>", cmd_next_page)
+
+        btn_prev_page = ttk.Button(frm_ranger, text="Previous Page - Alt B", command=cmd_prev_page, bootstyle=bootstyle)
+        btn_prev_page.pack(side="right", padx=4, pady=4)
+        window.bind("<Alt-b>", cmd_prev_page)
+
+        frm_current_record = ttk.LabelFrame(window, text="Current Record")
+        frm_current_record.pack(padx=4, pady=4, fill="x")
+
+        lbl_id = ttk.Label(frm_current_record, text="Basket ID")
+        lbl_id.grid(column=0, row=0, padx=4, pady=4)
+
+        txt_id = ttk.Entry(frm_current_record, textvariable=v_id, state="readonly", width=10)
+        txt_id.grid(column=0, row=1, padx=4, pady=4)
+
+        lbl_de = ttk.Label(frm_current_record, text="Description")
+        lbl_de.grid(column=1, row=0, padx=4, pady=4)
+
+        txt_de = ttk.Entry(frm_current_record, textvariable=v_de, width=20)
+        txt_de.grid(column=1, row=1, padx=4, pady=4)
+
+        lbl_do = ttk.Label(frm_current_record, text="Donors")
+        lbl_do.grid(column=2, row=0, padx=4, pady=4)
+
+        txt_do = ttk.Entry(frm_current_record, textvariable=v_do, width=20)
+        txt_do.grid(column=2, row=1, padx=4, pady=4)
+
+        lbl_wt = ttk.Label(frm_current_record, text="Winning Ticket")
+        lbl_wt.grid(column=3, row=0, padx=4, pady=4)
+
+        txt_wt = ttk.Entry(frm_current_record, textvariable=v_wt, state="readonly", width=10)
+        txt_wt.grid(column=3, row=1, padx=4, pady=4)
+
+        frm_commands = ttk.LabelFrame(window, text="Commands")
+        frm_commands.pack(padx=4, pady=4, fill="x")
+
+        btn_move_up = ttk.Button(frm_commands, text="Move Up - Alt O", command=cmd_move_up, bootstyle=bootstyle)
+        btn_move_up.pack(side="left", padx=4, pady=4)
+        window.bind("<Alt-o>", cmd_move_up)
+
+        btn_move_down = ttk.Button(frm_commands, text="Move Down - Alt L", command=cmd_move_down, bootstyle=bootstyle)
+        btn_move_down.pack(side="left", padx=4, pady=4)
+        window.bind("<Alt-l>", cmd_move_down)
+
+        btn_dup_up = ttk.Button(frm_commands, text="Duplicate Up - Alt U", command=cmd_dup_up, bootstyle=bootstyle)
+        btn_dup_up.pack(side="left", padx=4, pady=4)
+        window.bind("<Alt-u>", cmd_dup_up)
+
+        btn_dup_down = ttk.Button(frm_commands, text="Duplicate Down - Alt J", command=cmd_dup_down, bootstyle=bootstyle)
+        btn_dup_down.pack(side="left", padx=4, pady=4)
+        window.bind("<Alt-j>", cmd_dup_down)
+
+        btn_copy = ttk.Button(frm_commands, text="Copy - Ctrl C", command=cmd_copy, bootstyle=bootstyle)
+        btn_copy.pack(side="left", padx=4, pady=4)
+        window.bind("<Control-c>", cmd_copy)
+
+        btn_paste = ttk.Button(frm_commands, text="Paste - Ctrl V", command=cmd_paste, bootstyle=bootstyle)
+        btn_paste.pack(side="left", padx=4, pady=4)
+        window.bind("<Control-v>", cmd_paste)
+
+        frm_tv = ttk.LabelFrame(window, text="View Tickets")
+        frm_tv.pack(padx=4, pady=4, fill="both", expand="yes")
+
+        tv_sb = ttk.Scrollbar(frm_tv, orient="vertical")
+        tv_sb.pack(side="right", padx=4, pady=4, fill="y")
+
+        tview = ttk.Treeview(frm_tv, show="headings", columns=("id", "de", "do", "wt"), yscrollcommand=tv_sb.set)
+        tview.heading("id", text="Basket ID", anchor="w"), tview.heading("de", text="Description", anchor="w"), tview.heading("do", text="Donors", anchor="w")
+        tview.heading("wt", text="Winning Ticket", anchor="w")
+        tv_sb.config(command=tview.yview)
+        tview.pack(padx=4, pady=4, fill="both", expand="yes")
+
+        tview.bind("<<TreeviewSelect>>", cmd_tv_select)
+
+        txt_from.focus()
+
+    def cmd_drawing_form():
+        prefix = cmb_prefix.get().lower()
+        bootstyle = prefixes[prefix]["bootstyle"]
+        window = ttk.Toplevel(title=f"{prefix.capitalize()} Drawing")
+        v_from, v_to = ttk.IntVar(window), ttk.IntVar(window)
+        v_id, v_de, v_do, v_wt = ttk.IntVar(window), ttk.StringVar(window), ttk.StringVar(window), ttk.IntVar(window)
+        save_record = []
+        
+        def cmd_set_call(_=None):
+            v_pref.set("CALL")
+        
+        def cmd_set_text(_=None):
+            v_pref.set("TEXT")
+
+        def cmd_tv_select(_=None):
+            for s in tview.selection():
+                r = tview.item(s)["values"]
+                v_id.set(r[0]), v_de.set(r[1]), v_do.set(r[2]), v_wt.set(r[3])
+
+        def cmd_update_all(_=None):
+            tview.delete(*tview.get_children())
+            for i in range(v_from.get(), v_to.get()+1):
+                tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"))
+            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
+            if results:
+                for r in results:
+                    tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"]))
+            c_results = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
+            if c_results:
+                for r in c_results:
+                    tview.set(r["basket_id"], "wi", f"{r["last_name"]}, {r["first_name"]}")
+            if v_id.get() < v_from.get():
+                v_id.set(v_from.get())
+            if v_id.get() > v_to.get():
+                v_id.set(v_to.get())
+            tview.selection_set(v_id.get())
+            txt_wt.focus()
+
+        def cmd_prev_page(_=None):
+            diff = v_to.get()-v_from.get()+1
+            v_from.set(v_from.get()-diff), v_to.set(v_to.get()-diff)
+            cmd_update_all()
+
+        def cmd_next_page(_=None):
+            diff = v_to.get()-v_from.get()+1
+            v_from.set(v_from.get()+diff), v_to.set(v_to.get()+diff)
+            cmd_update_all()
+
+        def cmd_save(_=None):
+            if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
+                s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
+                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item).json()
+                if result["success"] == True:
+                    tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get(), "No Winner"))
+                    c_result = get(f"{BASE_URL}combined/{prefix.lower()}/{v_id.get()}/").json()
+                    if c_result:
+                        tview.set(v_id.get(), "wi", f"{c_result["last_name"]}, {c_result["first_name"]}")
+
+        def cmd_copy(_=None):
+            save_record.clear()
+            save_record.append(v_wt.get())
+        
+        def cmd_paste(_=None):
+            v_wt.set(save_record[0])
+
+        def cmd_move_up(_=None):
+            cmd_save()
+            if v_id.get() > v_from.get():
+                v_id.set(v_id.get()-1)
+                tview.selection_set(v_id.get())
+            txt_wt.focus()
+
+        def cmd_move_down(_=None):
+            cmd_save()
+            if v_id.get() < v_to.get():
+                v_id.set(v_id.get()+1)
+                tview.selection_set(v_id.get())
+            txt_wt.focus()
+
+        def cmd_dup_up(_=None):
+            cmd_copy()
+            cmd_move_up()
+            cmd_paste()
+
+        def cmd_dup_down(_=None):
+            cmd_copy()
+            cmd_move_down()
+            cmd_paste()
+
+        frm_ranger = ttk.LabelFrame(window, text="Range Control")
+        frm_ranger.pack(padx=4, pady=4, fill="x")
+
+        lbl_from = ttk.Label(frm_ranger, text="Range: ")
+        lbl_from.pack(side="left", padx=4, pady=4)
+
+        txt_from = ttk.Entry(frm_ranger, textvariable=v_from, width=10)
+        txt_from.pack(side="left", padx=4, pady=4)
+
+        lbl_to = ttk.Label(frm_ranger, text=" - ")
+        lbl_to.pack(side="left", padx=4, pady=4)
+
+        txt_to = ttk.Entry(frm_ranger, textvariable=v_to, width=10)
+        txt_to.pack(side="left", padx=4, pady=4)
+
+        btn_go = ttk.Button(frm_ranger, text="Go", command=cmd_update_all, bootstyle=bootstyle)
+        btn_go.pack(side="left", padx=4, pady=4)
+
+        btn_next_page = ttk.Button(frm_ranger, text="Next Page - Alt N", command=cmd_next_page, bootstyle=bootstyle)
+        btn_next_page.pack(side="right", padx=4, pady=4)
+        window.bind("<Alt-n>", cmd_next_page)
+
+        btn_prev_page = ttk.Button(frm_ranger, text="Previous Page - Alt B", command=cmd_prev_page, bootstyle=bootstyle)
+        btn_prev_page.pack(side="right", padx=4, pady=4)
+        window.bind("<Alt-b>", cmd_prev_page)
+
+        frm_current_record = ttk.LabelFrame(window, text="Current Record")
+        frm_current_record.pack(padx=4, pady=4, fill="x")
+
+        lbl_id = ttk.Label(frm_current_record, text="Basket ID")
+        lbl_id.grid(column=0, row=0, padx=4, pady=4)
+
+        txt_id = ttk.Entry(frm_current_record, textvariable=v_id, state="readonly", width=10)
+        txt_id.grid(column=0, row=1, padx=4, pady=4)
+
+        lbl_de = ttk.Label(frm_current_record, text="Description")
+        lbl_de.grid(column=1, row=0, padx=4, pady=4)
+
+        txt_de = ttk.Entry(frm_current_record, textvariable=v_de, state="readonly", width=20)
+        txt_de.grid(column=1, row=1, padx=4, pady=4)
+
+        lbl_do = ttk.Label(frm_current_record, text="Donors")
+        lbl_do.grid(column=2, row=0, padx=4, pady=4)
+
+        txt_do = ttk.Entry(frm_current_record, textvariable=v_do, state="readonly", width=20)
+        txt_do.grid(column=2, row=1, padx=4, pady=4)
+
+        lbl_wt = ttk.Label(frm_current_record, text="Winning Ticket")
+        lbl_wt.grid(column=3, row=0, padx=4, pady=4)
+
+        txt_wt = ttk.Entry(frm_current_record, textvariable=v_wt, width=10)
+        txt_wt.grid(column=3, row=1, padx=4, pady=4)
+
+        frm_commands = ttk.LabelFrame(window, text="Commands")
+        frm_commands.pack(padx=4, pady=4, fill="x")
+
+        btn_move_up = ttk.Button(frm_commands, text="Move Up - Alt O", command=cmd_move_up, bootstyle=bootstyle)
+        btn_move_up.pack(side="left", padx=4, pady=4)
+        window.bind("<Alt-o>", cmd_move_up)
+
+        btn_move_down = ttk.Button(frm_commands, text="Move Down - Alt L", command=cmd_move_down, bootstyle=bootstyle)
+        btn_move_down.pack(side="left", padx=4, pady=4)
+        window.bind("<Alt-l>", cmd_move_down)
+
+        btn_dup_up = ttk.Button(frm_commands, text="Duplicate Up - Alt U", command=cmd_dup_up, bootstyle=bootstyle)
+        btn_dup_up.pack(side="left", padx=4, pady=4)
+        window.bind("<Alt-u>", cmd_dup_up)
+
+        btn_dup_down = ttk.Button(frm_commands, text="Duplicate Down - Alt J", command=cmd_dup_down, bootstyle=bootstyle)
+        btn_dup_down.pack(side="left", padx=4, pady=4)
+        window.bind("<Alt-j>", cmd_dup_down)
+
+        btn_copy = ttk.Button(frm_commands, text="Copy - Ctrl C", command=cmd_copy, bootstyle=bootstyle)
+        btn_copy.pack(side="left", padx=4, pady=4)
+        window.bind("<Control-c>", cmd_copy)
+
+        btn_paste = ttk.Button(frm_commands, text="Paste - Ctrl V", command=cmd_paste, bootstyle=bootstyle)
+        btn_paste.pack(side="left", padx=4, pady=4)
+        window.bind("<Control-v>", cmd_paste)
+
+        frm_tv = ttk.LabelFrame(window, text="View Tickets")
+        frm_tv.pack(padx=4, pady=4, fill="both", expand="yes")
+
+        tv_sb = ttk.Scrollbar(frm_tv, orient="vertical")
+        tv_sb.pack(side="right", padx=4, pady=4, fill="y")
+
+        tview = ttk.Treeview(frm_tv, show="headings", columns=("id", "de", "do", "wt", "wi"), yscrollcommand=tv_sb.set)
+        tview.heading("id", text="Basket ID", anchor="w"), tview.heading("de", text="Description", anchor="w"), tview.heading("do", text="Donors", anchor="w")
+        tview.heading("wt", text="Winning Ticket", anchor="w"), tview.heading("wi", text="Winner", anchor="w")
+        tv_sb.config(command=tview.yview)
+        tview.pack(padx=4, pady=4, fill="both", expand="yes")
+
+        tview.bind("<<TreeviewSelect>>", cmd_tv_select)
+
+        txt_from.focus()
+
     frm_prefixes = ttk.LabelFrame(window, text="Prefix Selection")
     frm_prefixes.pack(padx=4, pady=4, fill="x")
 
@@ -316,10 +684,10 @@ def main():
     btn_tickets = ttk.Button(frm_forms, text="Tickets", command=cmd_ticket_form, state="disabled")
     btn_tickets.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
 
-    btn_baskets = ttk.Button(frm_forms, text="Baskets", state="disabled")
+    btn_baskets = ttk.Button(frm_forms, text="Baskets", command=cmd_basket_form, state="disabled")
     btn_baskets.grid(row=0, column=1, padx=4, pady=4, sticky="ew")
 
-    btn_drawing = ttk.Button(frm_forms, text="Drawing", state="disabled", width=50)
+    btn_drawing = ttk.Button(frm_forms, text="Drawing", command=cmd_drawing_form, state="disabled", width=50)
     btn_drawing.grid(row=1, column=0, columnspan=2, padx=4, pady=4, sticky="ew")
 
     frm_statusbar = ttk.Frame(window)
