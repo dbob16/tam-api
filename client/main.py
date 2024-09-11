@@ -24,12 +24,17 @@ def main():
         BASE_URL = server["BASE_URL"]
         prefs = config["prefs"]
 
+    try:
+        api_key = server["api_key"]
+    except:
+        api_key = None
+
     window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs["theme"])
     v_status = ttk.StringVar(window)
 
     def cmd_check_cfg():
         try:
-            result = get(f"{BASE_URL}").json()
+            result = get(f"{BASE_URL}", params={"api_key": api_key}).json()
             if result["whoami"] == "TAM-Server":
                 v_status.set("Status: Connected")
                 lbl_status.config(bootstyle="success")
@@ -44,7 +49,7 @@ def main():
         l_pr = []
         l_di = {}
         try:
-            results = get(f"{BASE_URL}/prefixes/").json()
+            results = get(f"{BASE_URL}/prefixes/", params={"api_key": api_key}).json()
             for r in results:
                 l_pr.append(r["prefix"].capitalize())
                 l_di[r["prefix"]] = {"bootstyle": r["bootstyle"]}
@@ -71,11 +76,15 @@ def main():
         window = ttk.Toplevel(title="TAM Settings")
         v_base_url = ttk.StringVar(window)
         v_base_url.set(server["BASE_URL"])
+        v_api = ttk.StringVar(window)
+        v_api_sts = ttk.StringVar(window)
 
         def save():
             config["server"] = {
                 "BASE_URL": v_base_url.get()
             }
+            if v_api.get():
+                config["server"]["api_key"] = v_api.get()
             config["prefs"] = {
                 "theme": cmb_theme.get()
             }
@@ -86,6 +95,15 @@ def main():
         def cancel():
             window.destroy()
 
+        def gen_api_key():
+            response = get(f"{BASE_URL}genapi/", params={"inp_pw": txt_api_pw.get()}).json()
+            try:
+                set_api_key = response["api_key"]
+                v_api.set(set_api_key)
+                v_api_sts.set("API Key Generated and Appended to Save")
+            except:
+                v_api_sts.set("Password may not be correct, please try again.")
+
         frm_server = ttk.LabelFrame(window, text="Server Settings")
         frm_server.pack(padx=4, pady=4, fill="x")
 
@@ -94,6 +112,18 @@ def main():
 
         txt_base_url = ttk.Entry(frm_server, textvariable=v_base_url)
         txt_base_url.grid(row=0, column=1, padx=4, pady=4)
+
+        lbl_secure_mode = ttk.Label(frm_server, text="If your server is in secure mode (API_PW env var is set), enter the API_PW and click Generate API Key")
+        lbl_secure_mode.grid(row=1, column=0, columnspan=2, padx=4, pady=4)
+
+        txt_api_pw = ttk.Entry(frm_server, show="*")
+        txt_api_pw.grid(row=2, column=0, columnspan=2, padx=4, pady=4)
+
+        btn_gen_api = ttk.Button(frm_server, text="Generate API Key", command=gen_api_key)
+        btn_gen_api.grid(row=3, column=0, columnspan=2, padx=4, pady=4)
+
+        lbl_gen_key_status = ttk.Label(frm_server, textvariable=v_api_sts)
+        lbl_gen_key_status.grid(row=4, column=0, columnspan=2, padx=4, pady=4)
 
         frm_prefs = ttk.LabelFrame(window, text="Preferences")
         frm_prefs.pack(padx=4, pady=4, fill="x")
@@ -140,7 +170,7 @@ def main():
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", "", "CALL"))
-            results = get(f"{BASE_URL}tickets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
+            results = get(f"{BASE_URL}tickets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}).json()
             if results:
                 for r in results:
                     tview.item(r["ticket_id"], values=(r["ticket_id"], r["first_name"], r["last_name"], r["phone_number"], r["preference"]))
@@ -164,7 +194,7 @@ def main():
         def cmd_save(_=None):
             if tview.item(v_id.get())["values"] != [v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()]:
                 s_item = {"ticket_id": v_id.get(), "first_name": v_fn.get(), "last_name": v_ln.get(), "phone_number": v_pn.get(), "preference": v_pref.get()}
-                result = post(f"{BASE_URL}ticket/{prefix.lower()}/", json=s_item).json()
+                result = post(f"{BASE_URL}ticket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}).json()
                 if result["success"] == True:
                     tview.item(v_id.get(), values=(v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()))
 
@@ -331,7 +361,7 @@ def main():
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", 0))
-            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
+            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}).json()
             if results:
                 for r in results:
                     tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"]))
@@ -355,7 +385,7 @@ def main():
         def cmd_save(_=None):
             if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
                 s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
-                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item).json()
+                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}).json()
                 if result["success"] == True:
                     tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get()))
 
@@ -514,11 +544,11 @@ def main():
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"))
-            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
+            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}).json()
             if results:
                 for r in results:
                     tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"], "No Winner"))
-            c_results = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
+            c_results = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}).json()
             if c_results:
                 for r in c_results:
                     tview.set(r["basket_id"], "wi", f"{r["last_name"]}, {r["first_name"]}")
@@ -542,10 +572,10 @@ def main():
         def cmd_save(_=None):
             if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
                 s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
-                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item).json()
+                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}).json()
                 if result["success"] == True:
                     tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get(), "No Winner"))
-                    c_result = get(f"{BASE_URL}combined/{prefix.lower()}/{v_id.get()}/").json()
+                    c_result = get(f"{BASE_URL}combined/{prefix.lower()}/{v_id.get()}/", params={"api_key": api_key}).json()
                     if c_result:
                         tview.set(v_id.get(), "wi", f"{c_result["last_name"]}, {c_result["first_name"]}")
 
@@ -677,22 +707,22 @@ def main():
         txt_from.focus()
 
     def cmd_byname_text():
-        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?filter=text")
+        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=text")
 
     def cmd_byname_call():
-        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?filter=call")
+        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=call")
 
     def cmd_byname_both():
-        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/")
+        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}")
 
     def cmd_bybasket_text():
-        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?filter=text")
+        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=text")
 
     def cmd_bybasket_call():
-        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?filter=call")
+        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=call")
 
     def cmd_bybasket_both():
-        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/")
+        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}")
 
     frm_prefixes = ttk.LabelFrame(window, text="Prefix Selection")
     frm_prefixes.pack(padx=4, pady=4, fill="x")

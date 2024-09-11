@@ -2,3 +2,5 @@ data.db
 */data.db
 __pycache__/
 */__pycache__/
+.env.secret
+*/.env.secret
