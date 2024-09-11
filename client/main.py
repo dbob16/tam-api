@@ -63,7 +63,9 @@ def main():
             btn_byname_text.config(bootstyle=result["bootstyle"], state="normal")
             btn_byname_call.config(bootstyle=result["bootstyle"], state="normal")
             btn_byname_both.config(bootstyle=result["bootstyle"], state="normal")
-
+            btn_bybasket_text.config(bootstyle=result["bootstyle"], state="normal")
+            btn_bybasket_call.config(bootstyle=result["bootstyle"], state="normal")
+            btn_bybasket_both.config(bootstyle=result["bootstyle"], state="normal")
 
     def cmd_settings_window():
         window = ttk.Toplevel(title="TAM Settings")
@@ -683,6 +685,15 @@ def main():
     def cmd_byname_both():
         webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/")
 
+    def cmd_bybasket_text():
+        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?filter=text")
+
+    def cmd_bybasket_call():
+        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?filter=call")
+
+    def cmd_bybasket_both():
+        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/")
+
     frm_prefixes = ttk.LabelFrame(window, text="Prefix Selection")
     frm_prefixes.pack(padx=4, pady=4, fill="x")
 
@@ -718,6 +729,18 @@ def main():
 
     btn_byname_both = ttk.Button(frm_byname, text="Both", command=cmd_byname_both, state="disabled", width=50)
     btn_byname_both.grid(row=1, column=0, columnspan=2, padx=4, pady=4)
+
+    frm_bybasket = ttk.LabelFrame(frm_reports, text="By Basket")
+    frm_bybasket.pack(padx=4, pady=4, fill="x")
+
+    btn_bybasket_both = ttk.Button(frm_bybasket, text="Both", command=cmd_bybasket_both, state="disabled", width=50)
+    btn_bybasket_both.grid(row=0, column=0, columnspan=2, padx=4, pady=4)
+
+    btn_bybasket_text = ttk.Button(frm_bybasket, text="Text", command=cmd_bybasket_text, state="disabled")
+    btn_bybasket_text.grid(row=1, column=0, padx=4, pady=4, sticky="nsew")
+
+    btn_bybasket_call = ttk.Button(frm_bybasket, text="Call", command=cmd_bybasket_call, state="disabled")
+    btn_bybasket_call.grid(row=1, column=1, padx=4, pady=4, sticky="nsew")
 
     frm_statusbar = ttk.Frame(window)
     frm_statusbar.pack(side="bottom", padx=4, pady=4, fill="x")

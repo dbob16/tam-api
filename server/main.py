@@ -270,3 +270,24 @@ def report_byname(request:Request, prefix:str, filter:str=None):
     results = cur.fetchall()
     headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
     return templates.TemplateResponse(request=request, name="byname.html", context={"title": select_title, "headers": headers, "records": results})
+
+@app.get("/reports/bybasket/{prefix}/", response_class=HTMLResponse)
+def report_bybasket(request:Request, prefix:str, filter:str=None):
+    prefix = prefix.lower()
+    conn, cur = session()
+    if filter == None:
+        select_title = "Winners - All Preferences"
+        filter_line = ""
+    elif filter == "call":
+        select_title = "Winners Preferring Calls"
+        filter_line = "WHERE t.preference = \"CALL\""
+    elif filter == "text":
+        select_title = "Winners Preferring Texts"
+        filter_line = "WHERE t.preference = \"TEXT\""
+    cur.execute(f"""SELECT b.basket_id, b.description, b.winning_ticket, CONCAT(t.last_name, \", \", t.first_name) AS last_first, t.phone_number
+    FROM '{prefix}_baskets' b INNER JOIN '{prefix}_tickets' t ON b.winning_ticket = t.ticket_id
+    {filter_line}
+    ORDER BY b.basket_id""")
+    results = cur.fetchall()
+    headers = ("Basket #", "Basket Description", "Ticket #", "Winner Name", "Phone Number")
+    return templates.TemplateResponse(request=request, name="bybasket.html", context={"title": select_title, "headers": headers, "records": results})

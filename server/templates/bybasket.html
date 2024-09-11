@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basket Winners by Name</title>
+</head>
+<style>
+* {
+    text-align: left;
+    padding: 0;
+    margin: 0;
+}
+tfoot #attribution {
+    font-size: 8pt;
+}
+th {
+    padding: 3px;
+}
+table, th, td {
+    border-collapse: collapse;
+}
+tbody tr td {
+    padding: 1px 4px;
+    font-size: 11pt;
+    border: 1px solid black;
+}
+</style>
+<body>
+<table>
+<thead>
+<tr>
+<th colspan="9">
+<h1>Basket Winners by Basket #</h1>
+</th>
+</tr>
+<tr>
+<th colspan="9">
+<h2>{{ title }}</h2>
+</th>
+</tr>
+<tr>
+{% for heading in headers %}
+<th>{{ heading }}</th>
+{% endfor %}
+</tr>
+</thead>
+<tbody>
+{% for rows in records %}
+<tr>
+{% for column in rows %}
+<td>{{ column }}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+<tfoot>
+<tr>
+<td id="attribution">Ticket Auction Manager by Dilan Gilluly</td>
+</tr>
+</tfoot>
+</table>
+</body>
+</html>
