@@ -21,6 +21,12 @@ def session():
         cur = conn.cursor()
         return conn, cur
 
+def rand():
+    if DB_TYPE == "LOCAL":
+        return "random()"
+    elif DB_TYPE == "MYSQL":
+        return "rand()"
+
 class Prefix(BaseModel):
     prefix: str
     bootstyle: str
@@ -171,6 +177,19 @@ def get_range_tickets(prefix:str, id_from:int, id_to:int, api_key:str=None):
             r_d = {"ticket_id": r[0], "first_name": r[1], "last_name": r[2], "phone_number": r[3], "preference": r[4]}
             r_l.append(r_d)
         return r_l
+
+@app.get("/random/tickets/{prefix}/")
+def get_random_ticket(prefix:str, api_key:str=None):
+    prefix = prefix.lower()
+    if API_PW and not check_api_key(api_key):
+        return {}
+    conn, cur = session()
+    cur.execute(f"SELECT * FROM '{prefix}_tickets' ORDER BY {rand()} LIMIT 1")
+    r = cur.fetchone()
+    if not r:
+        return {}
+    else:
+        return {"ticket_id": r[0], "first_name": r[1], "last_name": r[2], "phone_number": r[3], "preference": r[4]}
 
 @app.post("/ticket/{prefix}/")
 def post_ticket(prefix:str, t:Ticket, api_key:str=None):
@@ -329,7 +348,7 @@ def report_byname(request:Request, prefix:str, filter:str=None, api_key:str=None
     ORDER BY last_first, t.phone_number, b.basket_id""")
     results = cur.fetchall()
     headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
-    return templates.TemplateResponse(request=request, name="byname.html", context={"title": select_title, "headers": headers, "records": results})
+    return templates.TemplateResponse(request=request, name="byname.html", context={"prefix": prefix.capitalize(), "title": select_title, "headers": headers, "records": results})
 
 @app.get("/reports/bybasket/{prefix}/", response_class=HTMLResponse)
 def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=None):
@@ -352,4 +371,4 @@ def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=No
     ORDER BY b.basket_id""")
     results = cur.fetchall()
     headers = ("Basket #", "Basket Description", "Ticket #", "Winner Name", "Phone Number")
-    return templates.TemplateResponse(request=request, name="bybasket.html", context={"title": select_title, "headers": headers, "records": results})
+    return templates.TemplateResponse(request=request, name="bybasket.html", context={"prefix": prefix.capitalize(), "title": select_title, "headers": headers, "records": results})

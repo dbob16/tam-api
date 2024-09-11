@@ -4,6 +4,27 @@ import webbrowser
 from requests import get, post
 from configparser import ConfigParser
 
+try:
+    import names
+    def generate_name():
+        return names.get_first_name(), names.get_last_name()
+except:
+    pass
+
+try:
+    import random
+    def generate_phone_number():
+        def d01():
+            return f"{random.randint(0,1)}"
+        def d():
+            return f"{random.randint(0,9)}"
+        return f"{d01()}{d()}{d()}-{d()}{d()}{d()}-{d()}{d()}{d()}{d()}"
+    def generate_preference():
+        choices = ("TEXT", "CALL")
+        return random.choice(choices)
+except:
+    pass
+
 def main():
     config = ConfigParser()
     try:
@@ -234,6 +255,12 @@ def main():
             cmd_move_down()
             cmd_paste()
 
+        def cmd_random(_=None):
+            first_name, last_name = generate_name()
+            phone_number = generate_phone_number()
+            pref = generate_preference()
+            v_fn.set(first_name), v_ln.set(last_name), v_pn.set(phone_number), v_pref.set(pref)
+
         frm_ranger = ttk.LabelFrame(window, text="Range Control")
         frm_ranger.pack(padx=4, pady=4, fill="x")
 
@@ -294,6 +321,8 @@ def main():
         txt_pref.grid(column=4, row=1, padx=4, pady=4)
         txt_pref.bind("<c>", cmd_set_call)
         txt_pref.bind("<t>", cmd_set_text)
+        
+        window.bind("<Alt-r>", cmd_random)
 
         frm_commands = ttk.LabelFrame(window, text="Commands")
         frm_commands.pack(padx=4, pady=4, fill="x")
@@ -610,6 +639,13 @@ def main():
             cmd_move_down()
             cmd_paste()
 
+        def cmd_random(_=None):
+            try:
+                result = get(f"{BASE_URL}random/tickets/{prefix}/", params={"api_key": api_key}, verify=False).json()
+                v_wt.set(result["ticket_id"])
+            except:
+                pass
+
         frm_ranger = ttk.LabelFrame(window, text="Range Control")
         frm_ranger.pack(padx=4, pady=4, fill="x")
 
@@ -662,6 +698,8 @@ def main():
 
         txt_wt = ttk.Entry(frm_current_record, textvariable=v_wt, width=10)
         txt_wt.grid(column=3, row=1, padx=4, pady=4)
+
+        window.bind("<Alt-r>", cmd_random)
 
         frm_commands = ttk.LabelFrame(window, text="Commands")
         frm_commands.pack(padx=4, pady=4, fill="x")

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Basket Winners by Name</title>
+<title>{{ prefix }} Basket Winners by Name</title>
 </head>
 <style>
 * {
@@ -16,6 +16,14 @@ tfoot #attribution {
 }
 th {
     padding: 3px;
+}
+table {
+    h1 {
+        font-size: 18pt;
+    }
+    h2, h3, h4, h5, h6 {
+        font-size: 16pt;
+    }
 }
 table, th, td {
     border-collapse: collapse;
@@ -31,7 +39,7 @@ tbody tr td {
 <thead>
 <tr>
 <th colspan="9">
-<h1>Basket Winners by Name</h1>
+<h1>{{ prefix }} Basket Winners by Name</h1>
 </th>
 </tr>
 <tr>
