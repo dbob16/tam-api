@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import dotenv
 import os
@@ -32,6 +34,8 @@ class Basket(BaseModel):
     description: str
     donors: str
     winning_ticket: int
+
+templates = Jinja2Templates(directory="templates")
 
 conn, cur = session()
 cur.execute("CREATE TABLE IF NOT EXISTS prefixes (prefix VARCHAR(150) PRIMARY KEY, bootstyle VARCHAR(150) NOT NULL, sort_order INT DEFAULT 1)")
@@ -245,3 +249,24 @@ def combined_range(prefix:str, id_from:int, id_to:int):
         return r_l
     else:
         return []
+
+@app.get("/reports/byname/{prefix}/", response_class=HTMLResponse)
+def report_byname(request:Request, prefix:str, filter:str=None):
+    prefix = prefix.lower()
+    conn, cur = session()
+    if filter == None:
+        select_title = "Winners - All Preferences"
+        filter_line = ""
+    elif filter == "call":
+        select_title = "Winners Preferring Calls"
+        filter_line = "WHERE t.preference = \"CALL\""
+    elif filter == "text":
+        select_title = "Winners Preferring Texts"
+        filter_line = "WHERE t.preference = \"TEXT\""
+    cur.execute(f"""SELECT CONCAT(t.last_name, \", \", t.first_name) as last_first, t.phone_number, b.basket_id, b.winning_ticket, b.description
+    FROM '{prefix}_baskets' b INNER JOIN '{prefix}_tickets' t ON b.winning_ticket = t.ticket_id
+    {filter_line}
+    ORDER BY last_first, t.phone_number, b.basket_id""")
+    results = cur.fetchall()
+    headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
+    return templates.TemplateResponse(request=request, name="byname.html", context={"title": select_title, "headers": headers, "records": results})

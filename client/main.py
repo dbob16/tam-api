@@ -1,5 +1,6 @@
 import os
 import ttkbootstrap as ttk 
+import webbrowser
 from requests import get, post
 from configparser import ConfigParser
 
@@ -59,6 +60,10 @@ def main():
             btn_tickets.config(bootstyle=result["bootstyle"], state="normal")
             btn_baskets.config(bootstyle=result["bootstyle"], state="normal")
             btn_drawing.config(bootstyle=result["bootstyle"], state="normal")
+            btn_byname_text.config(bootstyle=result["bootstyle"], state="normal")
+            btn_byname_call.config(bootstyle=result["bootstyle"], state="normal")
+            btn_byname_both.config(bootstyle=result["bootstyle"], state="normal")
+
 
     def cmd_settings_window():
         window = ttk.Toplevel(title="TAM Settings")
@@ -510,7 +515,7 @@ def main():
             results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
             if results:
                 for r in results:
-                    tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"]))
+                    tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"], "No Winner"))
             c_results = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/").json()
             if c_results:
                 for r in c_results:
@@ -669,6 +674,15 @@ def main():
 
         txt_from.focus()
 
+    def cmd_byname_text():
+        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?filter=text")
+
+    def cmd_byname_call():
+        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?filter=call")
+
+    def cmd_byname_both():
+        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/")
+
     frm_prefixes = ttk.LabelFrame(window, text="Prefix Selection")
     frm_prefixes.pack(padx=4, pady=4, fill="x")
 
@@ -689,6 +703,21 @@ def main():
 
     btn_drawing = ttk.Button(frm_forms, text="Drawing", command=cmd_drawing_form, state="disabled", width=50)
     btn_drawing.grid(row=1, column=0, columnspan=2, padx=4, pady=4, sticky="ew")
+
+    frm_reports = ttk.LabelFrame(window, text="Reports")
+    frm_reports.pack(padx=4, pady=4, fill="x")
+
+    frm_byname = ttk.LabelFrame(frm_reports, text="By Name")
+    frm_byname.pack(padx=4, pady=4, fill="x")
+
+    btn_byname_text = ttk.Button(frm_byname, text="Text", command=cmd_byname_text, state="disabled")
+    btn_byname_text.grid(row=0, column=0, padx=4, pady=4, sticky="nsew")
+
+    btn_byname_call = ttk.Button(frm_byname, text="Call", command=cmd_byname_call, state="disabled")
+    btn_byname_call.grid(row=0, column=1, padx=4, pady=4, sticky="nsew")
+
+    btn_byname_both = ttk.Button(frm_byname, text="Both", command=cmd_byname_both, state="disabled", width=50)
+    btn_byname_both.grid(row=1, column=0, columnspan=2, padx=4, pady=4)
 
     frm_statusbar = ttk.Frame(window)
     frm_statusbar.pack(side="bottom", padx=4, pady=4, fill="x")
