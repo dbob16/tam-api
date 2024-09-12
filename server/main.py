@@ -63,6 +63,10 @@ class Basket(BaseModel):
     donors: str
     winning_ticket: int
 
+class ApiRequest(BaseModel):
+    inp_pw: str
+    pc_name: str
+
 templates = Jinja2Templates(directory="templates")
 
 def create_api_key():
@@ -91,16 +95,51 @@ def index(api_key:str=None):
         return {}
     return {"whoami": "TAM-Server"}
 
-@app.get("/genapi/")
-def gen_api(inp_pw:str=None):
-    if API_PW and API_PW != inp_pw:
+@app.get("/api_keys/")
+def get_api_keys(api_key:str=None):
+    if API_PW and not check_api_key(api_key):
+        return []
+    conn, cur = session()
+    cur.execute("SELECT * FROM api_keys ORDER BY pc_name")
+    results = cur.fetchall()
+    if not results:
+        return []
+    r_l = []
+    for r in results:
+        r_d = {"api_key": r[0], "pc_name": r[1]}
+        r_l.append(r_d)
+    return r_l
+
+@app.post("/genapi/")
+def gen_api(in_req:ApiRequest):
+    if API_PW and API_PW != in_req.inp_pw:
         return {}
     rtn_key = create_api_key()
     conn, cur = session()
-    cur.execute("CREATE TABLE IF NOT EXISTS api_keys (api_key VARCHAR(255) PRIMARY KEY)")
-    cur.execute(f"INSERT INTO api_keys (api_key) VALUES (\"{rtn_key}\")")
+    cur.execute("CREATE TABLE IF NOT EXISTS api_keys (api_key VARCHAR(255) PRIMARY KEY, pc_name VARCHAR(255))")
+    cur.execute(f"INSERT INTO api_keys (api_key, pc_name) VALUES (\"{rtn_key}\", \"{in_req.pc_name}\")")
     conn.commit()
     return {"api_key": rtn_key}
+
+@app.delete("/delapi/")
+def del_api(api_key:str=None, pc_name:str=None):
+    if api_key and pc_name:
+        conn, cur = session()
+        cur.execute(f"DELETE FROM api_keys WHERE api_key = \"{api_key}\" AND pc_name = \"{pc_name}\"")
+        conn.commit()
+        return {"success": True, "response": f"Deleted key {api_key} and {pc_name}"}
+    elif api_key:
+        conn, cur = session()
+        cur.execute(f"DELETE FROM api_keys WHERE api_key = \"{api_key}\"")
+        conn.commit()
+        return {"success": True, "response": f"Deleted key {api_key}"}
+    elif pc_name:
+        conn, cur = session()
+        cur.execute(f"DELETE FROM api_keys WHERE pc_name = \"{pc_name}\"")
+        conn.commit()
+        return {"success": True, "response": f"Deleted key {pc_name}"}
+    else:
+        return {"success": False, "response": "Nothing provided, can't act"}
 
 @app.get("/prefixes/")
 def list_prefixes(api_key:str=None):
@@ -147,6 +186,16 @@ def post_prefix(prefix:Prefix, api_key:str=None):
         return {"success": True, "created_prefix": f"{prefix.prefix} | {prefix.bootstyle} | {prefix.sort_order}"}
     except Exception as e:
         return {"success": False, "exception": e}
+
+@app.delete("/delprefix/")
+def delete_prefix(prefix:str, api_key:str=None):
+    prefix = prefix.lower()
+    if API_PW and not check_api_key(api_key):
+        return {}
+    conn, cur = session()
+    cur.execute(f"DELETE FROM prefixes WHERE prefix = \"{prefix}\"")
+    conn.commit()
+    return {"success": True, "result": f"Deleted {prefix} from the prefixes table"}
 
 @app.get("/tickets/{prefix}/")
 def get_all_tickets(prefix:str, api_key:str=None):

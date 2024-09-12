@@ -98,6 +98,7 @@ def main():
         v_base_url = ttk.StringVar(window)
         v_base_url.set(server["BASE_URL"])
         v_api = ttk.StringVar(window)
+        v_api_name = ttk.StringVar(window)
         v_api_sts = ttk.StringVar(window)
 
         def save():
@@ -117,7 +118,7 @@ def main():
             window.destroy()
 
         def gen_api_key():
-            response = get(f"{BASE_URL}genapi/", params={"inp_pw": txt_api_pw.get()}).json()
+            response = post(f"{BASE_URL}genapi/", json={"inp_pw": txt_api_pw.get(), "pc_name": txt_api_name.get()}).json()
             try:
                 set_api_key = response["api_key"]
                 v_api.set(set_api_key)
@@ -137,14 +138,23 @@ def main():
         lbl_secure_mode = ttk.Label(frm_server, text="If your server is in secure mode (API_PW env var is set), enter the API_PW and click Generate API Key")
         lbl_secure_mode.grid(row=1, column=0, columnspan=2, padx=4, pady=4)
 
-        txt_api_pw = ttk.Entry(frm_server, show="*")
-        txt_api_pw.grid(row=2, column=0, columnspan=2, padx=4, pady=4)
+        lbl_api_pw = ttk.Label(frm_server, text="API_PW")
+        lbl_api_pw.grid(row=2, column=0, padx=4, pady=4)
+
+        txt_api_pw = ttk.Entry(frm_server, show="*", width=20)
+        txt_api_pw.grid(row=2, column=1, padx=4, pady=4)
+
+        lbl_api_name = ttk.Label(frm_server, text="Computer Name")
+        lbl_api_name.grid(row=3, column=0, padx=4, pady=4)
+
+        txt_api_name = ttk.Entry(frm_server)
+        txt_api_name.grid(row=3, column=1, padx=4, pady=4)
 
         btn_gen_api = ttk.Button(frm_server, text="Generate API Key", command=gen_api_key)
-        btn_gen_api.grid(row=3, column=0, columnspan=2, padx=4, pady=4)
+        btn_gen_api.grid(row=4, column=0, columnspan=2, padx=4, pady=4)
 
         lbl_gen_key_status = ttk.Label(frm_server, textvariable=v_api_sts)
-        lbl_gen_key_status.grid(row=4, column=0, columnspan=2, padx=4, pady=4)
+        lbl_gen_key_status.grid(row=5, column=0, columnspan=2, padx=4, pady=4)
 
         frm_prefs = ttk.LabelFrame(window, text="Preferences")
         frm_prefs.pack(padx=4, pady=4, fill="x")
