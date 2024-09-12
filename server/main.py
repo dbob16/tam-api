@@ -15,10 +15,28 @@ API_PW = os.getenv("API_PW", None)
 if DB_TYPE == "LOCAL":
     from sqlite3 import connect
 
+if DB_TYPE == "MYSQL":
+    from mysql.connector import connect
+    MYSQL_HOST = os.getenv("MYSQL_HOST", "mariadb")
+    MYSQL_PORT = os.getenv("MYSQL_PORT", 3306)
+    MYSQL_USER = os.getenv("MYSQL_USER", "root")
+    MYSQL_PASSWD = os.getenv("MYSQL_PASSWD", "password")
+    MYSQL_DB = os.getenv("MYSQL_DB", "tam")
+
 def session():
     if DB_TYPE == "LOCAL":
         conn = connect('data.db')
         cur = conn.cursor()
+        return conn, cur
+    elif DB_TYPE == "MYSQL":
+        conn = connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWD,
+            database=MYSQL_DB
+        )
+        cur = conn.cusor()
         return conn, cur
 
 def rand():
@@ -124,7 +142,7 @@ def post_prefix(prefix:Prefix, api_key:str=None):
         conn, cur = session()
         cur.execute(f"CREATE TABLE IF NOT EXISTS '{prefix.prefix}_tickets' (ticket_id INT PRIMARY KEY, first_name VARCHAR(200), last_name VARCHAR(200), phone_number VARCHAR(200), preference VARCHAR(100))")
         cur.execute(f"CREATE TABLE IF NOT EXISTS '{prefix.prefix}_baskets' (basket_id INT PRIMARY KEY, description VARCHAR(255), donors VARCHAR(255), winning_ticket INT)")
-        cur.execute(f"INSERT INTO prefixes (prefix, bootstyle, sort_order) VALUES ('{prefix.prefix}', '{prefix.bootstyle}', {prefix.sort_order})")
+        cur.execute(f"REPLACE INTO prefixes (prefix, bootstyle, sort_order) VALUES ('{prefix.prefix}', '{prefix.bootstyle}', {prefix.sort_order})")
         conn.commit()
         return {"success": True, "created_prefix": f"{prefix.prefix} | {prefix.bootstyle} | {prefix.sort_order}"}
     except Exception as e:
@@ -198,7 +216,7 @@ def post_ticket(prefix:str, t:Ticket, api_key:str=None):
         return {}
     try:
         conn, cur = session()
-        cur.execute(f"INSERT OR REPLACE INTO '{prefix}_tickets' (ticket_id, first_name, last_name, phone_number, preference) VALUES ({t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
+        cur.execute(f"REPLACE INTO '{prefix}_tickets' (ticket_id, first_name, last_name, phone_number, preference) VALUES ({t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
         conn.commit()
         return {"success": True, "posted_ticket": f"Prefix: {prefix} Details: {t.ticket_id} {t.first_name} {t.last_name} {t.phone_number} {t.preference}"}
     except Exception as e:
@@ -259,7 +277,7 @@ def post_basket(prefix:str, b:Basket, api_key:str=None):
         return {}
     try:
         conn, cur = session()
-        cur.execute(f"INSERT OR REPLACE INTO '{prefix}_baskets' (basket_id, description, donors, winning_ticket) VALUES ({b.basket_id}, \"{b.description}\", \"{b.donors}\", {b.winning_ticket})")
+        cur.execute(f"REPLACE INTO '{prefix}_baskets' (basket_id, description, donors, winning_ticket) VALUES ({b.basket_id}, \"{b.description}\", \"{b.donors}\", {b.winning_ticket})")
         conn.commit()
         return {"success": True, "posted_basket": f"Prefix: {prefix} Details: {b.basket_id} {b.description} {b.donors} {b.winning_ticket}"}
     except Exception as e:
