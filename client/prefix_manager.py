@@ -33,13 +33,14 @@ def main():
 
 
     def cmd_add_prefix():
-        response = post(f"{BASE_URL}prefix/", json={"prefix": cmb_prefix.get(), "bootstyle": cmb_bootstyle.get(), "sort_order": spn_sort_order.get()}, params={"api_key": api_key}).json()
+        response = post(f"{BASE_URL}prefix/", json={"prefix": cmb_prefix.get(), "bootstyle": cmb_bootstyle.get(), "sort_order": spn_sort_order.get()}, params={"api_key": api_key})
+        r_s = response.json()
         try:
-            if response["success"]:
+            if r_s["success"]:
                 cmd_get_prefixes()
                 cmb_prefix.set("")
         except:
-            pass
+            print(response)
 
     def cmd_rm_prefix():
         response = delete(f"{BASE_URL}delprefix/", params={"api_key": api_key, "prefix": cmb_prefix.get()}).json()
