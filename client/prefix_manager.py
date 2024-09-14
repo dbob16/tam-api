@@ -23,20 +23,28 @@ except:
 def main():
     window = ttk.Window(title="TAM Prefix Manager", themename=config["prefs"]["theme"])
     v_status = ttk.StringVar(window)
+    d_current = {}
 
     def cmd_get_prefixes():
-        response = get(f"{BASE_URL}prefixes/", params={"api_key": api_key})
+        response = get(f"{BASE_URL}prefixes/", params={"api_key": api_key}, verify=False)
         if response.status_code == 200:
+            d_current.clear()
             r_j = response.json()
             p_l = [r["prefix"] for r in r_j]
             cmb_prefix.config(values=p_l)
+            for r in r_j:
+                d_current[r["prefix"]] = {"bootstyle": r["bootstyle"], "sort_order": r["sort_order"]}
         else:
             v_status.set(f"Getting list of prefixes unsuccessful, status code <{response.status_code}>")
             lbl_status.config(bootstyle="danger")
 
+    def cmd_cmb_prefix(_=None):
+        cr = d_current[cmb_prefix.get()]
+        cmb_bootstyle.set(cr["bootstyle"])
+        spn_sort_order.set(cr["sort_order"])
 
     def cmd_add_prefix():
-        response = post(f"{BASE_URL}prefix/", json={"prefix": cmb_prefix.get(), "bootstyle": cmb_bootstyle.get(), "sort_order": spn_sort_order.get()}, params={"api_key": api_key})
+        response = post(f"{BASE_URL}prefix/", json={"prefix": cmb_prefix.get(), "bootstyle": cmb_bootstyle.get(), "sort_order": spn_sort_order.get()}, params={"api_key": api_key}, verify=False)
         if response.status_code == 200:
             v_status.set(f"Created prefix {cmb_prefix.get()} successfully")
             lbl_status.config(bootstyle="success")
@@ -46,7 +54,7 @@ def main():
             lbl_status.config(bootstyle="danger")
 
     def cmd_rm_prefix():
-        response = delete(f"{BASE_URL}delprefix/", params={"api_key": api_key, "prefix": cmb_prefix.get()})
+        response = delete(f"{BASE_URL}delprefix/", params={"api_key": api_key, "prefix": cmb_prefix.get()}, verify=False)
         if response.status_code == 200:
             v_status.set(f"Deleted prefix {cmb_prefix.get()} successfully")
             lbl_status.config(bootstyle="success")
@@ -65,6 +73,7 @@ def main():
 
     cmb_prefix = ttk.Combobox(frm_prefixes)
     cmb_prefix.grid(row=1, column=0, padx=4, pady=4)
+    cmb_prefix.bind("<<ComboboxSelected>>", cmd_cmb_prefix)
 
     lbl_bootstyle = ttk.Label(frm_prefixes, text="Bootsyle")
     lbl_bootstyle.grid(row=0, column=1, padx=4, pady=4)

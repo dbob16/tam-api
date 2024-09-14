@@ -210,6 +210,7 @@ def main():
             if v_id.get() > v_to.get():
                 v_id.set(v_to.get())
             tview.selection_set(v_id.get())
+            tview.see(tview.selection())
             txt_fn.focus()
 
         def cmd_prev_page(_=None):
@@ -411,6 +412,7 @@ def main():
             if v_id.get() > v_to.get():
                 v_id.set(v_to.get())
             tview.selection_set(v_id.get())
+            tview.see(tview.selection())
             txt_de.focus()
 
         def cmd_prev_page(_=None):
@@ -600,6 +602,7 @@ def main():
             if v_id.get() > v_to.get():
                 v_id.set(v_to.get())
             tview.selection_set(v_id.get())
+            tview.see(tview.selection())
             txt_wt.focus()
 
         def cmd_prev_page(_=None):
