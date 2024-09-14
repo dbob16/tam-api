@@ -1,0 +1,1 @@
+Put your server's certificate and key in this folder as nginx.crt and nginx.key

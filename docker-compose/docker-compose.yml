@@ -1,0 +1,52 @@
+services:
+  mariadb:
+    image: mariadb
+    container_name: mariadb-tam
+    environment:
+      MARIADB_USER: tam
+      MARIADB_PASSWORD: password
+      MARIADB_DATABASE: tam
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+    volumes:
+      - ./db-data:/var/lib/mysql:Z
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: always
+  tam:
+    image: tam-testing
+    container_name: dbob16/tam-server
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        restart: true
+    environment:
+      DB_TYPE: MYSQL
+      MYSQL_HOST: mariadb
+      MYSQL_USER: tam
+      MYSQL_PASSWORD: password
+      MYSQL_DB: tam
+    ports:
+      - '8000:80'
+    restart: always
+
+  # Enable ssl by uncommenting these lines and putting nginx.crt (server certificate) and nginx.key (server key) in certs
+  # nginx:
+  #   image: nginx
+  #   container_name: nginx-tam-rp
+  #   depends_on:
+  #     mariadb:
+  #       condition: service_healthy
+  #       restart: true
+  #     tam:
+  #       condition: service_started
+  #       restart: true
+  #   ports:
+  #     - "8443:8443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./certs:/etc/nginx/certs
+  #   restart: always
