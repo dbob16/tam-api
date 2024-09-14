@@ -17,8 +17,8 @@ services:
       retries: 3
     restart: always
   tam:
-    image: tam-testing
-    container_name: dbob16/tam-server
+    image: dbob16/tam-server
+    container_name: tam1
     depends_on:
       mariadb:
         condition: service_healthy
