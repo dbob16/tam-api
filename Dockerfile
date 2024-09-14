@@ -6,5 +6,6 @@ RUN pip install --no-cache-dir --upgrade -r requirements-server.txt
 
 COPY ./server /tam/server
 WORKDIR /tam/server
+EXPOSE 80
 
 CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "80"]

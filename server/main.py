@@ -84,6 +84,7 @@ def check_api_key(in_key:str):
 
 conn, cur = session()
 cur.execute("CREATE TABLE IF NOT EXISTS prefixes (prefix VARCHAR(150) PRIMARY KEY, bootstyle VARCHAR(150) NOT NULL, sort_order INT DEFAULT 1)")
+cur.execute("CREATE TABLE IF NOT EXISTS api_keys (api_key VARCHAR(255) PRIMARY KEY, pc_name VARCHAR(255))")
 conn.commit()
 conn.close()
 
@@ -116,7 +117,6 @@ def gen_api(in_req:ApiRequest):
         return {}
     rtn_key = create_api_key()
     conn, cur = session()
-    cur.execute("CREATE TABLE IF NOT EXISTS api_keys (api_key VARCHAR(255) PRIMARY KEY, pc_name VARCHAR(255))")
     cur.execute(f"INSERT INTO api_keys (api_key, pc_name) VALUES (\"{rtn_key}\", \"{in_req.pc_name}\")")
     conn.commit()
     return {"api_key": rtn_key}
