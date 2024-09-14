@@ -55,7 +55,7 @@ def main():
 
     def cmd_check_cfg():
         try:
-            result = get(f"{BASE_URL}", params={"api_key": api_key}).json()
+            result = get(f"{BASE_URL}", params={"api_key": api_key}, verify=False).json()
             if result["whoami"] == "TAM-Server":
                 v_status.set("Status: Connected")
                 lbl_status.config(bootstyle="success")
@@ -70,7 +70,7 @@ def main():
         l_pr = []
         l_di = {}
         try:
-            results = get(f"{BASE_URL}/prefixes/", params={"api_key": api_key}).json()
+            results = get(f"{BASE_URL}/prefixes/", params={"api_key": api_key}, verify=False).json()
             for r in results:
                 l_pr.append(r["prefix"].capitalize())
                 l_di[r["prefix"]] = {"bootstyle": r["bootstyle"]}
@@ -118,7 +118,7 @@ def main():
             window.destroy()
 
         def gen_api_key():
-            response = post(f"{BASE_URL}genapi/", json={"inp_pw": txt_api_pw.get(), "pc_name": txt_api_name.get()}).json()
+            response = post(f"{v_base_url.get()}genapi/", json={"inp_pw": txt_api_pw.get(), "pc_name": txt_api_name.get()}, verify=False).json()
             try:
                 set_api_key = response["api_key"]
                 v_api.set(set_api_key)
@@ -201,7 +201,7 @@ def main():
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", "", "CALL"))
-            results = get(f"{BASE_URL}tickets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}).json()
+            results = get(f"{BASE_URL}tickets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False).json()
             if results:
                 for r in results:
                     tview.item(r["ticket_id"], values=(r["ticket_id"], r["first_name"], r["last_name"], r["phone_number"], r["preference"]))
@@ -225,7 +225,7 @@ def main():
         def cmd_save(_=None):
             if tview.item(v_id.get())["values"] != [v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()]:
                 s_item = {"ticket_id": v_id.get(), "first_name": v_fn.get(), "last_name": v_ln.get(), "phone_number": v_pn.get(), "preference": v_pref.get()}
-                result = post(f"{BASE_URL}ticket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}).json()
+                result = post(f"{BASE_URL}ticket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False).json()
                 if result["success"] == True:
                     tview.item(v_id.get(), values=(v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()))
 
@@ -246,6 +246,7 @@ def main():
             if v_id.get() > v_from.get():
                 v_id.set(v_id.get()-1)
                 tview.selection_set(v_id.get())
+                tview.see(tview.selection())
             txt_fn.focus()
 
         def cmd_move_down(_=None):
@@ -253,6 +254,7 @@ def main():
             if v_id.get() < v_to.get():
                 v_id.set(v_id.get()+1)
                 tview.selection_set(v_id.get())
+                tview.see(tview.selection())
             txt_fn.focus()
 
         def cmd_dup_up(_=None):
@@ -400,7 +402,7 @@ def main():
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", 0))
-            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}).json()
+            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False).json()
             if results:
                 for r in results:
                     tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"]))
@@ -424,7 +426,7 @@ def main():
         def cmd_save(_=None):
             if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
                 s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
-                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}).json()
+                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False).json()
                 if result["success"] == True:
                     tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get()))
 
@@ -445,6 +447,7 @@ def main():
             if v_id.get() > v_from.get():
                 v_id.set(v_id.get()-1)
                 tview.selection_set(v_id.get())
+                tview.see(tview.selection())
             txt_de.focus()
 
         def cmd_move_down(_=None):
@@ -452,6 +455,7 @@ def main():
             if v_id.get() < v_to.get():
                 v_id.set(v_id.get()+1)
                 tview.selection_set(v_id.get())
+                tview.see(tview.selection())
             txt_de.focus()
 
         def cmd_dup_up(_=None):
@@ -583,11 +587,11 @@ def main():
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"))
-            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}).json()
+            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False).json()
             if results:
                 for r in results:
                     tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"], "No Winner"))
-            c_results = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}).json()
+            c_results = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False).json()
             if c_results:
                 for r in c_results:
                     tview.set(r["basket_id"], "wi", f"{r["last_name"]}, {r["first_name"]}")
@@ -611,10 +615,10 @@ def main():
         def cmd_save(_=None):
             if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
                 s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
-                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}).json()
+                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False).json()
                 if result["success"] == True:
                     tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get(), "No Winner"))
-                    c_result = get(f"{BASE_URL}combined/{prefix.lower()}/{v_id.get()}/", params={"api_key": api_key}).json()
+                    c_result = get(f"{BASE_URL}combined/{prefix.lower()}/{v_id.get()}/", params={"api_key": api_key}, verify=False).json()
                     if c_result:
                         tview.set(v_id.get(), "wi", f"{c_result["last_name"]}, {c_result["first_name"]}")
 
@@ -630,6 +634,7 @@ def main():
             if v_id.get() > v_from.get():
                 v_id.set(v_id.get()-1)
                 tview.selection_set(v_id.get())
+                tview.see(tview.selection())
             txt_wt.focus()
 
         def cmd_move_down(_=None):
@@ -637,6 +642,7 @@ def main():
             if v_id.get() < v_to.get():
                 v_id.set(v_id.get()+1)
                 tview.selection_set(v_id.get())
+                tview.see(tview.selection())
             txt_wt.focus()
 
         def cmd_dup_up(_=None):

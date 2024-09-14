@@ -88,7 +88,7 @@ cur.execute("CREATE TABLE IF NOT EXISTS api_keys (api_key VARCHAR(255) PRIMARY K
 conn.commit()
 conn.close()
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
 
 @app.get("/")
 def index(api_key:str=None):
@@ -102,6 +102,7 @@ def get_api_keys(api_key:str=None):
         return []
     conn, cur = session()
     cur.execute("SELECT * FROM api_keys ORDER BY pc_name")
+    conn.close()
     results = cur.fetchall()
     if not results:
         return []
@@ -119,6 +120,7 @@ def gen_api(in_req:ApiRequest):
     conn, cur = session()
     cur.execute(f"INSERT INTO api_keys (api_key, pc_name) VALUES (\"{rtn_key}\", \"{in_req.pc_name}\")")
     conn.commit()
+    conn.close()
     return {"api_key": rtn_key}
 
 @app.delete("/delapi/")
@@ -127,16 +129,19 @@ def del_api(api_key:str=None, pc_name:str=None):
         conn, cur = session()
         cur.execute(f"DELETE FROM api_keys WHERE api_key = \"{api_key}\" AND pc_name = \"{pc_name}\"")
         conn.commit()
+        conn.close()
         return {"success": True, "response": f"Deleted key {api_key} and {pc_name}"}
     elif api_key:
         conn, cur = session()
         cur.execute(f"DELETE FROM api_keys WHERE api_key = \"{api_key}\"")
         conn.commit()
+        conn.close()
         return {"success": True, "response": f"Deleted key {api_key}"}
     elif pc_name:
         conn, cur = session()
         cur.execute(f"DELETE FROM api_keys WHERE pc_name = \"{pc_name}\"")
         conn.commit()
+        conn.close()
         return {"success": True, "response": f"Deleted key {pc_name}"}
     else:
         return {"success": False, "response": "Nothing provided, can't act"}
@@ -148,6 +153,7 @@ def list_prefixes(api_key:str=None):
     conn, cur = session()
     cur.execute("SELECT * FROM prefixes ORDER BY sort_order, prefix")
     results = cur.fetchall()
+    conn.close()
     if not results:
         return []
     else:
@@ -165,6 +171,7 @@ def get_prefix(prefix:str, api_key:str=None):
     conn, cur = session()
     cur.execute(f"SELECT * FROM prefixes WHERE prefix = '{prefix}'")
     r = cur.fetchone()
+    conn.close()
     if not r:
         return {}
     else:
@@ -183,6 +190,7 @@ def post_prefix(prefix:Prefix, api_key:str=None):
         cur.execute(f"CREATE TABLE IF NOT EXISTS `{prefix.prefix}_baskets` (basket_id INT PRIMARY KEY, description VARCHAR(255), donors VARCHAR(255), winning_ticket INT)")
         cur.execute(f"REPLACE INTO prefixes (prefix, bootstyle, sort_order) VALUES ('{prefix.prefix}', '{prefix.bootstyle}', {prefix.sort_order})")
         conn.commit()
+        conn.close()
         return {"success": True, "created_prefix": f"{prefix.prefix} | {prefix.bootstyle} | {prefix.sort_order}"}
     except Exception as e:
         return {"success": False, "exception": e}
@@ -195,6 +203,7 @@ def delete_prefix(prefix:str, api_key:str=None):
     conn, cur = session()
     cur.execute(f"DELETE FROM prefixes WHERE prefix = \"{prefix}\"")
     conn.commit()
+    conn.close()
     return {"success": True, "result": f"Deleted {prefix} from the prefixes table"}
 
 @app.get("/tickets/{prefix}/")
@@ -205,6 +214,7 @@ def get_all_tickets(prefix:str, api_key:str=None):
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_tickets` ORDER BY ticket_id")
     results = cur.fetchall()
+    conn.close()
     if not results:
         return []
     else:
@@ -222,6 +232,7 @@ def get_single_ticket(prefix:str, ticket_id:int, api_key:str=None):
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_tickets` WHERE ticket_id={ticket_id}")
     r = cur.fetchone()
+    conn.close()
     if not r:
         return {}
     else:
@@ -236,6 +247,7 @@ def get_range_tickets(prefix:str, id_from:int, id_to:int, api_key:str=None):
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_tickets` WHERE ticket_id BETWEEN {id_from} AND {id_to}")
     results = cur.fetchall()
+    conn.close()
     if not results:
         return []
     else:
@@ -253,6 +265,7 @@ def get_random_ticket(prefix:str, api_key:str=None):
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_tickets` ORDER BY {rand()} LIMIT 1")
     r = cur.fetchone()
+    conn.close()
     if not r:
         return {}
     else:
@@ -267,6 +280,7 @@ def post_ticket(prefix:str, t:Ticket, api_key:str=None):
         conn, cur = session()
         cur.execute(f"REPLACE INTO `{prefix}_tickets` (ticket_id, first_name, last_name, phone_number, preference) VALUES ({t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
         conn.commit()
+        conn.close()
         return {"success": True, "posted_ticket": f"Prefix: {prefix} Details: {t.ticket_id} {t.first_name} {t.last_name} {t.phone_number} {t.preference}"}
     except Exception as e:
         return {"success": False, "exception": e}
@@ -279,6 +293,7 @@ def get_all_baskets(prefix:str, api_key:str=None):
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_baskets` ORDER BY basket_id")
     results = cur.fetchall()
+    conn.close()
     if not results:
         return []
     else:
@@ -296,6 +311,7 @@ def get_single_basket(prefix:str, basket_id:int, api_key:str=None):
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_baskets` WHERE basket_id = {basket_id}")
     r = cur.fetchone()
+    conn.close()
     if not r:
         return {}
     else:
@@ -310,6 +326,7 @@ def get_range_baskets(prefix:str, id_from:int, id_to:int, api_key:str=None):
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_baskets` WHERE basket_id BETWEEN {id_from} AND {id_to} ORDER BY basket_id")
     results = cur.fetchall()
+    conn.close()
     if not results:
         return []
     else:
@@ -328,6 +345,7 @@ def post_basket(prefix:str, b:Basket, api_key:str=None):
         conn, cur = session()
         cur.execute(f"REPLACE INTO `{prefix}_baskets` (basket_id, description, donors, winning_ticket) VALUES ({b.basket_id}, \"{b.description}\", \"{b.donors}\", {b.winning_ticket})")
         conn.commit()
+        conn.close()
         return {"success": True, "posted_basket": f"Prefix: {prefix} Details: {b.basket_id} {b.description} {b.donors} {b.winning_ticket}"}
     except Exception as e:
         return {"success": False, "exception": e}
@@ -344,6 +362,7 @@ def combined_all(prefix:str, api_key:str=None):
     ON b.winning_ticket = t.ticket_id
     ORDER BY b.basket_id""")
     results = cur.fetchall()
+    conn.close()
     if results:
         r_l = []
         for r in results:
@@ -366,6 +385,7 @@ def combined_single(prefix:str, basket_id:int, api_key:str=None):
     WHERE basket_id = {basket_id}
     ORDER BY b.basket_id""")
     r = cur.fetchone()
+    conn.close()
     if r:
         r_d = {"basket_id": r[0], "description": r[1], "donors": r[2], "winning_ticket": r[3], "first_name": r[4], "last_name": r[5], "phone_number": r[6], "preference": r[7]}
         return r_d
@@ -385,6 +405,7 @@ def combined_range(prefix:str, id_from:int, id_to:int, api_key:str=None):
     WHERE basket_id BETWEEN {id_from} AND {id_to}
     ORDER BY b.basket_id""")
     results = cur.fetchall()
+    conn.close()
     if results:
         r_l = []
         for r in results:
@@ -414,6 +435,7 @@ def report_byname(request:Request, prefix:str, filter:str=None, api_key:str=None
     {filter_line}
     ORDER BY last_first, t.phone_number, b.basket_id""")
     results = cur.fetchall()
+    conn.close()
     headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
     return templates.TemplateResponse(request=request, name="byname.html", context={"prefix": prefix.capitalize(), "title": select_title, "headers": headers, "records": results})
 
@@ -437,5 +459,6 @@ def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=No
     {filter_line}
     ORDER BY b.basket_id""")
     results = cur.fetchall()
+    conn.close()
     headers = ("Basket #", "Basket Description", "Ticket #", "Winner Name", "Phone Number")
     return templates.TemplateResponse(request=request, name="bybasket.html", context={"prefix": prefix.capitalize(), "title": select_title, "headers": headers, "records": results})
