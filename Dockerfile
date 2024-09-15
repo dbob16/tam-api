@@ -9,3 +9,4 @@ WORKDIR /tam/server
 EXPOSE 80
 
 CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "80"]
+HEALTHCHECK --interval=10s --timeout=3s CMD curl --fail http://loclahost:80/health/

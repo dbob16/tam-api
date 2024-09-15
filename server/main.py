@@ -96,6 +96,10 @@ def index(api_key:str=None):
         return {}
     return {"whoami": "TAM-Server"}
 
+@app.get("/health/")
+def health_check():
+    return {"status": "healthy"}
+
 @app.get("/api_keys/")
 def get_api_keys(api_key:str=None):
     if API_PW and not check_api_key(api_key):
@@ -124,7 +128,9 @@ def gen_api(in_req:ApiRequest):
     return {"api_key": rtn_key}
 
 @app.delete("/delapi/")
-def del_api(api_key:str=None, pc_name:str=None):
+def del_api(auth_key:str=None, api_key:str=None, pc_name:str=None):
+    if API_PW and not check_api_key(auth_key):
+        return {}
     if api_key and pc_name:
         conn, cur = session()
         cur.execute(f"DELETE FROM api_keys WHERE api_key = \"{api_key}\" AND pc_name = \"{pc_name}\"")
