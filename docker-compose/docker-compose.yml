@@ -31,9 +31,15 @@ services:
       MYSQL_DB: tam
     ports:
       - '8000:80'
+    healthcheck:
+      test: curl --fail http://localhost:80/health/ || exit 1
+      interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     restart: always
 
-  # Enable ssl by uncommenting these lines and putting nginx.crt (server certificate) and nginx.key (server key) in certs
+# Enable ssl by uncommenting these following lines and putting nginx.crt (server certificate) and nginx.key (server key) in certs
   # nginx:
   #   image: nginx
   #   container_name: nginx-tam-rp
@@ -49,4 +55,20 @@ services:
   #   volumes:
   #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
   #     - ./certs:/etc/nginx/certs
+  #   healthcheck:
+  #     test: ["CMD", "service", "nginx", "status"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 5s
   #   restart: always
+
+# Enable restarting of unhealthy services by uncommenting the following lines:
+  # autoheal:
+  #   restart: always
+  #   image: willfarrell/autoheal
+  #   container_name: autoheal
+  #   environment:
+  #     - AUTOHEAL_CONTAINER_LABEL=all
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
