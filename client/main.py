@@ -1,8 +1,10 @@
 import os
 import ttkbootstrap as ttk 
 import webbrowser
-from requests import get, post
+from httpx import get, post
 from configparser import ConfigParser
+from prefix_manager import prefix_manager
+from api_cleaner import api_cleaner
 
 try:
     import names
@@ -55,28 +57,26 @@ def main():
 
     def cmd_check_cfg():
         try:
-            result = get(f"{BASE_URL}", params={"api_key": api_key}, verify=False).json()
-            if result["whoami"] == "TAM-Server":
-                v_status.set("Status: Connected")
-                lbl_status.config(bootstyle="success")
-            else:
-                v_status.set("Status: Invalid Server Data")
-                lbl_status.config(bootstyle="danger")
+            result = get(f"{BASE_URL}", params={"api_key": api_key}, verify=False)
         except:
-            v_status.set("Status: Not Connected")
+            v_status.set(f"Unable to connect, check conf")
+            lbl_status.config(bootstyle="danger")
+        if result.status_code == 200:
+            v_status.set(f"Connected")
+            lbl_status.config(bootstyle="success")
+        else:
+            v_status.set(f"Error: HTTP Response <{result.status}>")
             lbl_status.config(bootstyle="danger")
 
     def cmd_get_prefixes():
         l_pr = []
         l_di = {}
-        try:
-            results = get(f"{BASE_URL}/prefixes/", params={"api_key": api_key}, verify=False).json()
-            for r in results:
+        response = get(f"{BASE_URL}prefixes/", params={"api_key": api_key}, verify=False)
+        if response.status_code == 200:
+            for r in response.json():
                 l_pr.append(r["prefix"].capitalize())
-                l_di[r["prefix"]] = {"bootstyle": r["bootstyle"]}
+                l_di[r["prefix"]] = {"bootstyle": r["bootstyle"], "sort_order": r["sort_order"]}
             return l_pr, l_di
-        except:
-            return [], {}
 
     prefix_names, prefixes = cmd_get_prefixes()
 
@@ -166,8 +166,8 @@ def main():
         cmb_theme.grid(row=0, column=1, padx=4, pady=4)
         cmb_theme.set(prefs["theme"])
 
-        lbl_caution = ttk.Label(window, text="Settings won't take effect until you exit entire application and reopen.")
-        lbl_caution.pack(padx=4, pady=4)
+        lbl_caution = ttk.Label(window, text="Settings won't take effect until you exit entire application and reopen.", anchor="center")
+        lbl_caution.pack(padx=4, pady=4, fill="x")
 
         frm_btn = ttk.Frame(window)
         frm_btn.pack(padx=4, pady=4)
@@ -177,6 +177,15 @@ def main():
 
         btn_cancel = ttk.Button(frm_btn, text="Cancel", bootstyle="secondary", command=cancel)
         btn_cancel.pack(side="left", padx=4, pady=4)
+
+        frm_other_tools = ttk.LabelFrame(window, text="Other Tools")
+        frm_other_tools.pack(padx=4, pady=4, fill="x")
+
+        btn_prefix_manager = ttk.Button(frm_other_tools, text="Prefix Manager", command=prefix_manager)
+        btn_prefix_manager.pack(side="left", padx=4, pady=4)
+
+        btn_api_cleaner = ttk.Button(frm_other_tools, text="Manage API Keys", command=api_cleaner)
+        btn_api_cleaner.pack(side="left", padx=4, pady=4)
 
     def cmd_ticket_form():
         prefix = cmb_prefix.get().lower()
@@ -201,10 +210,11 @@ def main():
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", "", "CALL"))
-            results = get(f"{BASE_URL}tickets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False).json()
-            if results:
-                for r in results:
-                    tview.item(r["ticket_id"], values=(r["ticket_id"], r["first_name"], r["last_name"], r["phone_number"], r["preference"]))
+            response = get(f"{BASE_URL}tickets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
+            if response.status_code == 200:
+                if response.json():
+                    for r in response.json():
+                        tview.item(r["ticket_id"], values=(r["ticket_id"], r["first_name"], r["last_name"], r["phone_number"], r["preference"]))
             if v_id.get() < v_from.get():
                 v_id.set(v_from.get())
             if v_id.get() > v_to.get():
@@ -226,9 +236,13 @@ def main():
         def cmd_save(_=None):
             if tview.item(v_id.get())["values"] != [v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()]:
                 s_item = {"ticket_id": v_id.get(), "first_name": v_fn.get(), "last_name": v_ln.get(), "phone_number": v_pn.get(), "preference": v_pref.get()}
-                result = post(f"{BASE_URL}ticket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False).json()
-                if result["success"] == True:
-                    tview.item(v_id.get(), values=(v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()))
+                response = post(f"{BASE_URL}ticket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False)
+                if response.status_code == 200:
+                    tview.item(v_id.get(), values=[v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()])
+
+        def cmd_cancel(_=None):
+            v = tview.item(v_id.get())["values"]
+            v_fn.set(v[1]), v_ln.set(v[2]), v_pn.set(v[3]), v_pref.set(v[4])
 
         def cmd_copy(_=None):
             save_record.clear()
@@ -334,6 +348,14 @@ def main():
         txt_pref.grid(column=4, row=1, padx=4, pady=4)
         txt_pref.bind("<c>", cmd_set_call)
         txt_pref.bind("<t>", cmd_set_text)
+
+        btn_save = ttk.Button(frm_current_record, text="Save", command=cmd_save, bootstyle=bootstyle)
+        btn_save.grid(column=5, row=1, padx=4, pady=4)
+        window.bind("<Control-s>", cmd_save)
+
+        btn_cancel = ttk.Button(frm_current_record, text="Cancel", command=cmd_cancel, bootstyle=bootstyle)
+        btn_cancel.grid(column=6, row=1, padx=4, pady=4)
+        window.bind("<Escape>", cmd_cancel)
         
         window.bind("<Alt-r>", cmd_random)
 
@@ -403,10 +425,11 @@ def main():
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", 0))
-            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False).json()
-            if results:
-                for r in results:
-                    tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"]))
+            response = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
+            if response.status_code == 200:
+                if response.json():
+                    for r in response.json():
+                        tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"]))
             if v_id.get() < v_from.get():
                 v_id.set(v_from.get())
             if v_id.get() > v_to.get():
@@ -428,9 +451,13 @@ def main():
         def cmd_save(_=None):
             if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
                 s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
-                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False).json()
-                if result["success"] == True:
+                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False)
+                if result.status_code == 200:
                     tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get()))
+        
+        def cmd_cancel(_=None):
+            v = tview.item(v_id.get())["values"]
+            v_de.set(v[1]), v_do.set(v[2])
 
         def cmd_copy(_=None):
             save_record.clear()
@@ -523,6 +550,14 @@ def main():
         txt_wt = ttk.Entry(frm_current_record, textvariable=v_wt, state="readonly", width=10)
         txt_wt.grid(column=3, row=1, padx=4, pady=4)
 
+        btn_save = ttk.Button(frm_current_record, text="Save", command=cmd_save, bootstyle=bootstyle)
+        btn_save.grid(column=4, row=1, padx=4, pady=4)
+        window.bind("<Control-s>", cmd_save)
+
+        btn_cancel = ttk.Button(frm_current_record, text="Cancel", command=cmd_cancel, bootstyle=bootstyle)
+        btn_cancel.grid(column=5, row=1, padx=4, pady=4)
+        window.bind("<Escape>", cmd_cancel)
+
         frm_commands = ttk.LabelFrame(window, text="Commands")
         frm_commands.pack(padx=4, pady=4, fill="x")
 
@@ -572,6 +607,7 @@ def main():
         window = ttk.Toplevel(title=f"{prefix.capitalize()} Drawing")
         v_from, v_to = ttk.IntVar(window), ttk.IntVar(window)
         v_id, v_de, v_do, v_wt = ttk.IntVar(window), ttk.StringVar(window), ttk.StringVar(window), ttk.IntVar(window)
+        v_wn = ttk.StringVar(window)
         save_record = []
         
         def cmd_set_call(_=None):
@@ -583,20 +619,24 @@ def main():
         def cmd_tv_select(_=None):
             for s in tview.selection():
                 r = tview.item(s)["values"]
-                v_id.set(r[0]), v_de.set(r[1]), v_do.set(r[2]), v_wt.set(r[3])
+                v_id.set(r[0]), v_de.set(r[1]), v_do.set(r[2]), v_wt.set(r[3]), v_wn.set(r[4])
 
         def cmd_update_all(_=None):
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
                 tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"))
-            results = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False).json()
-            if results:
-                for r in results:
-                    tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"], "No Winner"))
-            c_results = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False).json()
-            if c_results:
-                for r in c_results:
-                    tview.set(r["basket_id"], "wi", f"{r["last_name"]}, {r["first_name"]}")
+            response = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
+            if response.status_code == 200:
+                results = response.json()
+                if results:
+                    for r in results:
+                        tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"], "No Winner"))
+            c_response = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
+            if c_response.status_code == 200:
+                c_results = c_response.json()
+                if c_results:
+                    for r in c_results:
+                        tview.set(r["basket_id"], "wi", f"{r["last_name"]}, {r["first_name"]}")
             if v_id.get() < v_from.get():
                 v_id.set(v_from.get())
             if v_id.get() > v_to.get():
@@ -616,14 +656,20 @@ def main():
             cmd_update_all()
 
         def cmd_save(_=None):
-            if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
+            if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get(), v_wn.get()]:
                 s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
-                result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False).json()
-                if result["success"] == True:
+                response = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False)
+                if response.status_code == 200:
                     tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get(), "No Winner"))
-                    c_result = get(f"{BASE_URL}combined/{prefix.lower()}/{v_id.get()}/", params={"api_key": api_key}, verify=False).json()
-                    if c_result:
-                        tview.set(v_id.get(), "wi", f"{c_result["last_name"]}, {c_result["first_name"]}")
+                    c_response = get(f"{BASE_URL}combined/{prefix.lower()}/{v_id.get()}/", params={"api_key": api_key}, verify=False)
+                    if c_response.status_code == 200:
+                        c_result = c_response.json()
+                        if c_result:
+                            tview.set(v_id.get(), "wi", f"{c_result["last_name"]}, {c_result["first_name"]}")
+
+        def cmd_cancel(_=None):
+            r = tview.item(v_id.get())
+            v_de.set(r[1]), v_do.set(r[2]), v_wt.set(r[3]), v_wn.set(r[4])
 
         def cmd_copy(_=None):
             save_record.clear()
@@ -717,6 +763,14 @@ def main():
 
         txt_wt = ttk.Entry(frm_current_record, textvariable=v_wt, width=10)
         txt_wt.grid(column=3, row=1, padx=4, pady=4)
+
+        btn_save = ttk.Button(frm_current_record, text="Save", command=cmd_save, bootstyle=bootstyle)
+        btn_save.grid(column=4, row=1, padx=4, pady=4)
+        window.bind("<Control-s>", cmd_save)
+
+        btn_cancel = ttk.Button(frm_current_record, text="Cancel", command=cmd_cancel, bootstyle=bootstyle)
+        btn_cancel.grid(column=5, row=1, padx=4, pady=4)
+        window.bind("<Escape>", cmd_cancel)
 
         window.bind("<Alt-r>", cmd_random)
 

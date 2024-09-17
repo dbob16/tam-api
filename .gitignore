@@ -4,3 +4,5 @@ __pycache__/
 */__pycache__/
 .env.secret
 */.env.secret
+config.ini
+*/config.ini
