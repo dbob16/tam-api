@@ -224,11 +224,13 @@ def main():
             txt_fn.focus()
 
         def cmd_prev_page(_=None):
+            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()-diff), v_to.set(v_to.get()-diff)
             cmd_update_all()
 
         def cmd_next_page(_=None):
+            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()+diff), v_to.set(v_to.get()+diff)
             cmd_update_all()
@@ -439,11 +441,13 @@ def main():
             txt_de.focus()
 
         def cmd_prev_page(_=None):
+            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()-diff), v_to.set(v_to.get()-diff)
             cmd_update_all()
 
         def cmd_next_page(_=None):
+            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()+diff), v_to.set(v_to.get()+diff)
             cmd_update_all()
@@ -646,11 +650,13 @@ def main():
             txt_wt.focus()
 
         def cmd_prev_page(_=None):
+            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()-diff), v_to.set(v_to.get()-diff)
             cmd_update_all()
 
         def cmd_next_page(_=None):
+            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()+diff), v_to.set(v_to.get()+diff)
             cmd_update_all()
