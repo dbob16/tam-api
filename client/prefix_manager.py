@@ -99,7 +99,7 @@ def prefix_manager():
     frm_status_bar = ttk.Frame(window)
     frm_status_bar.pack(side="bottom", padx=4, pady=4)
 
-    lbl_status = ttk.Label(textvariable=v_status)
+    lbl_status = ttk.Label(frm_status_bar, textvariable=v_status)
     lbl_status.pack(side="left", padx=4, pady=4)
 
     cmb_bootstyle.set("primary")
