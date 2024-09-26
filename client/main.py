@@ -58,26 +58,28 @@ def main():
     def cmd_check_cfg():
         try:
             result = get(f"{BASE_URL}", params={"api_key": api_key}, verify=False)
+            if result.status_code == 200:
+                v_status.set(f"Connected")
+                lbl_status.config(bootstyle="success")
+            else:
+                v_status.set(f"Error: HTTP Response <{result.status}>")
+                lbl_status.config(bootstyle="danger")
         except:
             v_status.set(f"Unable to connect, check conf")
-            lbl_status.config(bootstyle="danger")
-        if result.status_code == 200:
-            v_status.set(f"Connected")
-            lbl_status.config(bootstyle="success")
-        else:
-            v_status.set(f"Error: HTTP Response <{result.status}>")
             lbl_status.config(bootstyle="danger")
 
     def cmd_get_prefixes():
         l_pr = []
         l_di = {}
-        response = get(f"{BASE_URL}prefixes/", params={"api_key": api_key}, verify=False)
-        if response.status_code == 200:
-            for r in response.json():
-                l_pr.append(r["prefix"].capitalize())
-                l_di[r["prefix"]] = {"bootstyle": r["bootstyle"], "sort_order": r["sort_order"]}
-            return l_pr, l_di
-
+        try:
+            response = get(f"{BASE_URL}prefixes/", params={"api_key": api_key}, verify=False)
+            if response.status_code == 200:
+                for r in response.json():
+                    l_pr.append(r["prefix"].capitalize())
+                    l_di[r["prefix"]] = {"bootstyle": r["bootstyle"], "sort_order": r["sort_order"]}
+                return l_pr, l_di
+        except:
+            return ["No DB Connection"], {"prefix": "No Connection", "bootstyle": "secondary"}
     prefix_names, prefixes = cmd_get_prefixes()
 
     def cmd_set_style(_=None):
