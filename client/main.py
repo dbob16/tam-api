@@ -52,7 +52,7 @@ def main():
     except:
         api_key = None
 
-    window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs["theme"])
+    window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs["theme"], iconphoto='icon.png')
     v_status = ttk.StringVar(window)
 
     def cmd_check_cfg():
