@@ -27,10 +27,21 @@ try:
 except:
     pass
 
+if os.name == "nt":
+    home_path = os.getenv("APPDATA")
+    if not os.path.exists(f"{home_path}\\TAM"):
+        os.mkdir(f"{home_path}\\TAM")
+    config_path = f"{home_path}\\TAM\\config.ini"
+else:
+    home_path = os.path.expanduser("~")
+    if not os.path.exists(f"{home_path}/.config/TAM"):
+        os.mkdir(f"{home_path}/.config/TAM")
+    config_path = f"{home_path}/.config/TAM/config.ini"
+
 def main():
     config = ConfigParser()
     try:
-        config.read('config.ini')
+        config.read(config_path)
         server = config["server"]
         BASE_URL = server["BASE_URL"]
         prefs = config["prefs"]
@@ -41,7 +52,7 @@ def main():
         config["prefs"] = {
             "theme": "cyborg"
         }
-        with open('config.ini', 'w') as file:
+        with open(config_path, 'w') as file:
             config.write(file)
         server = config["server"]
         BASE_URL = server["BASE_URL"]
@@ -112,7 +123,7 @@ def main():
             config["prefs"] = {
                 "theme": cmb_theme.get()
             }
-            with open('config.ini', 'w') as file:
+            with open(config_path, 'w') as file:
                 config.write(file)
             window.destroy()
         
