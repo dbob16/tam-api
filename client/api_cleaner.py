@@ -1,9 +1,21 @@
+import os
 import ttkbootstrap as ttk 
 from httpx import get, delete
 from configparser import ConfigParser
 
+if os.name == "nt":
+    home_path = os.getenv("APPDATA")
+    if not os.path.exists(f"{home_path}\\TAM"):
+        os.mkdir(f"{home_path}\\TAM")
+    config_path = f"{home_path}\\TAM\\config.ini"
+else:
+    home_path = os.path.expanduser("~")
+    if not os.path.exists(f"{home_path}/.config/TAM"):
+        os.mkdir(f"{home_path}/.config/TAM")
+    config_path = f"{home_path}/.config/TAM/config.ini"
+
 config = ConfigParser()
-config.read('config.ini')
+config.read(config_path)
 
 try:
     BASE_URL = config["server"]["base_url"]

@@ -3,12 +3,12 @@ services:
     image: mariadb
     container_name: mariadb-tam
     environment:
-      MARIADB_USER: tam
-      MARIADB_PASSWORD: password
-      MARIADB_DATABASE: tam
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
       MARIADB_RANDOM_ROOT_PASSWORD: 1
     volumes:
-      - ./db-data:/var/lib/mysql:Z
+      - ${DB_LOC}:/var/lib/mysql:Z
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 10s
@@ -24,11 +24,12 @@ services:
         condition: service_healthy
         restart: true
     environment:
+      API_PW: ${API_PW}
       DB_TYPE: MYSQL
       MYSQL_HOST: mariadb
-      MYSQL_USER: tam
-      MYSQL_PASSWORD: password
-      MYSQL_DB: tam
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DB: ${DB_NAME}
     ports:
       - '8000:80'
     healthcheck:
