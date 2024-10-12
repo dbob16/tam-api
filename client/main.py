@@ -111,6 +111,8 @@ def main():
         v_base_url = ttk.StringVar(window)
         v_base_url.set(server["BASE_URL"])
         v_api = ttk.StringVar(window)
+        if api_key:
+            v_api.set(api_key)
         v_api_name = ttk.StringVar(window)
         v_api_sts = ttk.StringVar(window)
 
