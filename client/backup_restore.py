@@ -1,6 +1,7 @@
 import time
 import json
 import os
+import gzip
 from datetime import datetime
 from httpx import get, post
 from configparser import ConfigParser
@@ -53,7 +54,7 @@ def backup():
     if not os.path.exists(f"backup/{folder}"):
         os.makedirs(f"backup/{folder}")
     filename = now.strftime("%H-%M")
-    with open(f"backup/{folder}/{filename}.json", "w") as file:
+    with gzip.open(f"backup/{folder}/{filename}.json.gz", "wt") as file:
         json.dump(s_d, file)
     print(f"Backup successfully made for {now.strftime("%Y-%m-%d %H:%M")}")
 
@@ -77,7 +78,7 @@ def restore(filepath:str=None):
     if not os.path.exists(filepath):
         print(f"No file found at: {filepath}")
         quit()
-    with open(filepath, "r") as file:
+    with gzip.open(filepath, "rt") as file:
         r_d = json.load(file)
     if not r_d["prefixes"]:
         quit()
