@@ -567,10 +567,12 @@ def main():
         btn_next_page = ttk.Button(frm_ranger, text="Next Page - Alt N", command=cmd_next_page, bootstyle=bootstyle)
         btn_next_page.pack(side="right", padx=4, pady=4)
         window.bind("<Alt-n>", cmd_next_page)
+        window.bind("<Alt-N>", cmd_next_page)
 
         btn_prev_page = ttk.Button(frm_ranger, text="Previous Page - Alt B", command=cmd_prev_page, bootstyle=bootstyle)
         btn_prev_page.pack(side="right", padx=4, pady=4)
         window.bind("<Alt-b>", cmd_prev_page)
+        window.bind("<Alt-B>", cmd_prev_page)
 
         frm_current_record = ttk.LabelFrame(window, text="Current Record")
         frm_current_record.pack(padx=4, pady=4, fill="x")
@@ -602,6 +604,7 @@ def main():
         btn_save = ttk.Button(frm_current_record, text="Save", command=cmd_save, bootstyle=bootstyle)
         btn_save.grid(column=4, row=1, padx=4, pady=4)
         window.bind("<Control-s>", cmd_save)
+        window.bind("<Control-S>", cmd_save)
 
         btn_cancel = ttk.Button(frm_current_record, text="Cancel", command=cmd_cancel, bootstyle=bootstyle)
         btn_cancel.grid(column=5, row=1, padx=4, pady=4)
@@ -613,26 +616,32 @@ def main():
         btn_move_up = ttk.Button(frm_commands, text="Move Up - Alt O", command=cmd_move_up, bootstyle=bootstyle)
         btn_move_up.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-o>", cmd_move_up)
+        window.bind("<Alt-O>", cmd_move_up)
 
         btn_move_down = ttk.Button(frm_commands, text="Move Down - Alt L", command=cmd_move_down, bootstyle=bootstyle)
         btn_move_down.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-l>", cmd_move_down)
+        window.bind("<Alt-L>", cmd_move_down)
 
         btn_dup_up = ttk.Button(frm_commands, text="Duplicate Up - Alt U", command=cmd_dup_up, bootstyle=bootstyle)
         btn_dup_up.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-u>", cmd_dup_up)
+        window.bind("<Alt-U>", cmd_dup_up)
 
         btn_dup_down = ttk.Button(frm_commands, text="Duplicate Down - Alt J", command=cmd_dup_down, bootstyle=bootstyle)
         btn_dup_down.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-j>", cmd_dup_down)
+        window.bind("<Alt-J>", cmd_dup_down)
 
-        btn_copy = ttk.Button(frm_commands, text="Copy - Ctrl C", command=cmd_copy, bootstyle=bootstyle)
+        btn_copy = ttk.Button(frm_commands, text="Copy - Alt C", command=cmd_copy, bootstyle=bootstyle)
         btn_copy.pack(side="left", padx=4, pady=4)
-        window.bind("<Control-c>", cmd_copy)
+        window.bind("<Alt-c>", cmd_copy)
+        window.bind("<Alt-C>", cmd_copy)
 
-        btn_paste = ttk.Button(frm_commands, text="Paste - Ctrl V", command=cmd_paste, bootstyle=bootstyle)
+        btn_paste = ttk.Button(frm_commands, text="Paste - Alt V", command=cmd_paste, bootstyle=bootstyle)
         btn_paste.pack(side="left", padx=4, pady=4)
-        window.bind("<Control-v>", cmd_paste)
+        window.bind("<Alt-v>", cmd_paste)
+        window.bind("<Alt-V>", cmd_paste)
 
         frm_tv = ttk.LabelFrame(window, text="View Tickets")
         frm_tv.pack(padx=4, pady=4, fill="both", expand="yes")
@@ -793,10 +802,12 @@ def main():
         btn_next_page = ttk.Button(frm_ranger, text="Next Page - Alt N", command=cmd_next_page, bootstyle=bootstyle)
         btn_next_page.pack(side="right", padx=4, pady=4)
         window.bind("<Alt-n>", cmd_next_page)
+        window.bind("<Alt-N>", cmd_next_page)
 
         btn_prev_page = ttk.Button(frm_ranger, text="Previous Page - Alt B", command=cmd_prev_page, bootstyle=bootstyle)
         btn_prev_page.pack(side="right", padx=4, pady=4)
         window.bind("<Alt-b>", cmd_prev_page)
+        window.bind("<Alt-B>", cmd_prev_page)
 
         frm_current_record = ttk.LabelFrame(window, text="Current Record")
         frm_current_record.pack(padx=4, pady=4, fill="x")
@@ -825,16 +836,19 @@ def main():
         txt_wt = ttk.Entry(frm_current_record, textvariable=v_wt, width=10)
         txt_wt.grid(column=3, row=1, padx=4, pady=4)
         window.bind("<Alt-m>", cmd_clear_wt)
+        window.bind("<Alt-M>", cmd_clear_wt)
 
         btn_save = ttk.Button(frm_current_record, text="Save", command=cmd_save, bootstyle=bootstyle)
         btn_save.grid(column=4, row=1, padx=4, pady=4)
         window.bind("<Control-s>", cmd_save)
+        window.bind("<Control-S>", cmd_save)
 
         btn_cancel = ttk.Button(frm_current_record, text="Cancel", command=cmd_cancel, bootstyle=bootstyle)
         btn_cancel.grid(column=5, row=1, padx=4, pady=4)
         window.bind("<Escape>", cmd_cancel)
 
         window.bind("<Alt-r>", cmd_random)
+        window.bind("<Alt-R>", cmd_random)
 
         frm_commands = ttk.LabelFrame(window, text="Commands")
         frm_commands.pack(padx=4, pady=4, fill="x")
@@ -842,26 +856,32 @@ def main():
         btn_move_up = ttk.Button(frm_commands, text="Move Up - Alt O", command=cmd_move_up, bootstyle=bootstyle)
         btn_move_up.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-o>", cmd_move_up)
+        window.bind("<Alt-O>", cmd_move_up)
 
         btn_move_down = ttk.Button(frm_commands, text="Move Down - Alt L", command=cmd_move_down, bootstyle=bootstyle)
         btn_move_down.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-l>", cmd_move_down)
+        window.bind("<Alt-L>", cmd_move_down)
 
         btn_dup_up = ttk.Button(frm_commands, text="Duplicate Up - Alt U", command=cmd_dup_up, bootstyle=bootstyle)
         btn_dup_up.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-u>", cmd_dup_up)
+        window.bind("<Alt-U>", cmd_dup_up)
 
         btn_dup_down = ttk.Button(frm_commands, text="Duplicate Down - Alt J", command=cmd_dup_down, bootstyle=bootstyle)
         btn_dup_down.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-j>", cmd_dup_down)
+        window.bind("<Alt-J>", cmd_dup_down)
 
-        btn_copy = ttk.Button(frm_commands, text="Copy - Ctrl C", command=cmd_copy, bootstyle=bootstyle)
+        btn_copy = ttk.Button(frm_commands, text="Copy - Alt C", command=cmd_copy, bootstyle=bootstyle)
         btn_copy.pack(side="left", padx=4, pady=4)
-        window.bind("<Control-c>", cmd_copy)
+        window.bind("<Alt-c>", cmd_copy)
+        window.bind("<Alt-C>", cmd_copy)
 
-        btn_paste = ttk.Button(frm_commands, text="Paste - Ctrl V", command=cmd_paste, bootstyle=bootstyle)
+        btn_paste = ttk.Button(frm_commands, text="Paste - Alt V", command=cmd_paste, bootstyle=bootstyle)
         btn_paste.pack(side="left", padx=4, pady=4)
-        window.bind("<Control-v>", cmd_paste)
+        window.bind("<Alt-v>", cmd_paste)
+        window.bind("<Alt-V>", cmd_paste)
 
         frm_tv = ttk.LabelFrame(window, text="View Tickets")
         frm_tv.pack(padx=4, pady=4, fill="both", expand="yes")
