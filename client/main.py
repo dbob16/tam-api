@@ -66,6 +66,11 @@ def main():
     window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs["theme"], iconphoto='icon.png')
     v_status = ttk.StringVar(window)
 
+    if window.style.theme.type == "dark":
+        BAND_COLOR = "#202020"
+    elif window.style.theme.type == "light":
+        BAND_COLOR = "#DDDDDD"
+
     def cmd_check_cfg():
         try:
             result = get(f"{BASE_URL}", params={"api_key": api_key}, verify=False)
@@ -88,10 +93,10 @@ def main():
                 for r in response.json():
                     l_pr.append(r["prefix"].capitalize())
                     l_di[r["prefix"]] = {"bootstyle": r["bootstyle"], "sort_order": r["sort_order"]}
-                return l_pr, l_di
+                cmb_prefix.config(values=l_pr)
+                return l_di
         except:
-            return ["No DB Connection"], {"prefix": "No Connection", "bootstyle": "secondary"}
-    prefix_names, prefixes = cmd_get_prefixes()
+            return {"prefix": "No Connection", "bootstyle": "secondary"}
 
     def cmd_set_style(_=None):
         if len(cmb_prefix.get()) > 0:
@@ -177,7 +182,7 @@ def main():
         lbl_theme = ttk.Label(frm_prefs, text="Theme: ")
         lbl_theme.grid(row=0, column=0, padx=4, pady=4)
 
-        cmb_theme = ttk.Combobox(frm_prefs, state="readonly", values=("cyborg", "solar", "superhero", "darkly", "vapor", "cosmo", "flatly", "journal", "litera", "lumen", "minty", "pulse", "sandstone", "united", "yeti", "morph", "simplex", "ciculean"))
+        cmb_theme = ttk.Combobox(frm_prefs, state="readonly", values=("cyborg", "cosmo"))
         cmb_theme.grid(row=0, column=1, padx=4, pady=4)
         cmb_theme.set(prefs["theme"])
 
@@ -222,30 +227,30 @@ def main():
                 v_id.set(r[0]), v_fn.set(r[1]), v_ln.set(r[2]), v_pn.set(r[3]), v_pref.set(r[4])
 
         def cmd_update_all(_=None):
+            if len(tview.get_children()) > 0:
+                cmd_save()
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
-                tview.insert("", "end", iid=i, values=(i, "", "", "", "CALL"))
+                if i % 2 > 0:
+                    tview.insert("", "end", iid=i, values=(i, "", "", "", "CALL"), tags=("oddrow",))
+                else:
+                    tview.insert("", "end", iid=i, values=(i, "", "", "", "CALL"))
             response = get(f"{BASE_URL}tickets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
             if response.status_code == 200:
                 if response.json():
                     for r in response.json():
                         tview.item(r["ticket_id"], values=(r["ticket_id"], r["first_name"], r["last_name"], r["phone_number"], r["preference"]))
-            if v_id.get() < v_from.get():
-                v_id.set(v_from.get())
-            if v_id.get() > v_to.get():
-                v_id.set(v_to.get())
+            v_id.set(v_from.get())
             tview.selection_set(v_id.get())
             tview.see(tview.selection())
             txt_fn.focus()
 
         def cmd_prev_page(_=None):
-            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()-diff), v_to.set(v_to.get()-diff)
             cmd_update_all()
 
         def cmd_next_page(_=None):
-            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()+diff), v_to.set(v_to.get()+diff)
             cmd_update_all()
@@ -278,7 +283,10 @@ def main():
             if v_id.get() > v_from.get():
                 v_id.set(v_id.get()-1)
                 tview.selection_set(v_id.get())
-                tview.see(tview.selection())
+            if v_id.get() > v_from.get():
+                tview.see(v_id.get()-1)
+            else:
+                tview.yview_moveto(0)
             txt_fn.focus()
 
         def cmd_move_down(_=None):
@@ -286,7 +294,10 @@ def main():
             if v_id.get() < v_to.get():
                 v_id.set(v_id.get()+1)
                 tview.selection_set(v_id.get())
-                tview.see(tview.selection())
+            if v_id.get() < v_to.get():
+                tview.see(v_id.get()+1)
+            else:
+                tview.yview_moveto(1)
             txt_fn.focus()
 
         def cmd_dup_up(_=None):
@@ -326,10 +337,12 @@ def main():
         btn_next_page = ttk.Button(frm_ranger, text="Next Page - Alt N", command=cmd_next_page, bootstyle=bootstyle)
         btn_next_page.pack(side="right", padx=4, pady=4)
         window.bind("<Alt-n>", cmd_next_page)
+        window.bind("<Alt-N>", cmd_next_page)
 
         btn_prev_page = ttk.Button(frm_ranger, text="Previous Page - Alt B", command=cmd_prev_page, bootstyle=bootstyle)
         btn_prev_page.pack(side="right", padx=4, pady=4)
         window.bind("<Alt-b>", cmd_prev_page)
+        window.bind("<Alt-B>", cmd_prev_page)
 
         frm_current_record = ttk.LabelFrame(window, text="Current Record")
         frm_current_record.pack(padx=4, pady=4, fill="x")
@@ -364,17 +377,21 @@ def main():
         txt_pref = ttk.Entry(frm_current_record, textvariable=v_pref, state="readonly")
         txt_pref.grid(column=4, row=1, padx=4, pady=4)
         txt_pref.bind("<c>", cmd_set_call)
+        txt_pref.bind("<C>", cmd_set_call)
         txt_pref.bind("<t>", cmd_set_text)
+        txt_pref.bind("<T>", cmd_set_text)
 
         btn_save = ttk.Button(frm_current_record, text="Save", command=cmd_save, bootstyle=bootstyle)
         btn_save.grid(column=5, row=1, padx=4, pady=4)
         window.bind("<Control-s>", cmd_save)
+        window.bind("<Control-S>", cmd_save)
 
         btn_cancel = ttk.Button(frm_current_record, text="Cancel", command=cmd_cancel, bootstyle=bootstyle)
         btn_cancel.grid(column=6, row=1, padx=4, pady=4)
         window.bind("<Escape>", cmd_cancel)
         
         window.bind("<Alt-r>", cmd_random)
+        window.bind("<Alt-R>", cmd_random)
 
         frm_commands = ttk.LabelFrame(window, text="Commands")
         frm_commands.pack(padx=4, pady=4, fill="x")
@@ -382,26 +399,32 @@ def main():
         btn_move_up = ttk.Button(frm_commands, text="Move Up - Alt O", command=cmd_move_up, bootstyle=bootstyle)
         btn_move_up.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-o>", cmd_move_up)
+        window.bind("<Alt-O>", cmd_move_up)
 
         btn_move_down = ttk.Button(frm_commands, text="Move Down - Alt L", command=cmd_move_down, bootstyle=bootstyle)
         btn_move_down.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-l>", cmd_move_down)
+        window.bind("<Alt-L>", cmd_move_down)
 
         btn_dup_up = ttk.Button(frm_commands, text="Duplicate Up - Alt U", command=cmd_dup_up, bootstyle=bootstyle)
         btn_dup_up.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-u>", cmd_dup_up)
+        window.bind("<Alt-U>", cmd_dup_up)
 
         btn_dup_down = ttk.Button(frm_commands, text="Duplicate Down - Alt J", command=cmd_dup_down, bootstyle=bootstyle)
         btn_dup_down.pack(side="left", padx=4, pady=4)
         window.bind("<Alt-j>", cmd_dup_down)
+        window.bind("<Alt-J>", cmd_dup_down)
 
-        btn_copy = ttk.Button(frm_commands, text="Copy - Ctrl C", command=cmd_copy, bootstyle=bootstyle)
+        btn_copy = ttk.Button(frm_commands, text="Copy - Alt C", command=cmd_copy, bootstyle=bootstyle)
         btn_copy.pack(side="left", padx=4, pady=4)
-        window.bind("<Control-c>", cmd_copy)
+        window.bind("<Alt-c>", cmd_copy)
+        window.bind("<Alt-C>", cmd_copy)
 
-        btn_paste = ttk.Button(frm_commands, text="Paste - Ctrl V", command=cmd_paste, bootstyle=bootstyle)
+        btn_paste = ttk.Button(frm_commands, text="Paste - Alt V", command=cmd_paste, bootstyle=bootstyle)
         btn_paste.pack(side="left", padx=4, pady=4)
-        window.bind("<Control-v>", cmd_paste)
+        window.bind("<Alt-v>", cmd_paste)
+        window.bind("<Alt-V>", cmd_paste)
 
         frm_tv = ttk.LabelFrame(window, text="View Tickets")
         frm_tv.pack(padx=4, pady=4, fill="both", expand="yes")
@@ -414,6 +437,7 @@ def main():
         tview.heading("pn", text="Phone Number", anchor="w"), tview.heading("pref", text="Preference", anchor="w")
         tv_sb.config(command=tview.yview)
         tview.pack(padx=4, pady=4, fill="both", expand="yes")
+        tview.tag_configure("oddrow", background=BAND_COLOR)
 
         tview.bind("<<TreeviewSelect>>", cmd_tv_select)
 
@@ -439,30 +463,30 @@ def main():
                 v_id.set(r[0]), v_de.set(r[1]), v_do.set(r[2]), v_wt.set(r[3])
 
         def cmd_update_all(_=None):
+            if len(tview.get_children()) > 0:
+                cmd_save()
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
-                tview.insert("", "end", iid=i, values=(i, "", "", 0))
+                if i % 2 > 0:
+                    tview.insert("", "end", iid=i, values=(i, "", "", 0), tags=("oddrow",))
+                else:
+                    tview.insert("", "end", iid=i, values=(i, "", "", 0))
             response = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
             if response.status_code == 200:
                 if response.json():
                     for r in response.json():
                         tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"]))
-            if v_id.get() < v_from.get():
-                v_id.set(v_from.get())
-            if v_id.get() > v_to.get():
-                v_id.set(v_to.get())
+            v_id.set(v_from.get())
             tview.selection_set(v_id.get())
             tview.see(tview.selection())
             txt_de.focus()
 
         def cmd_prev_page(_=None):
-            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()-diff), v_to.set(v_to.get()-diff)
             cmd_update_all()
 
         def cmd_next_page(_=None):
-            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()+diff), v_to.set(v_to.get()+diff)
             cmd_update_all()
@@ -495,7 +519,10 @@ def main():
             if v_id.get() > v_from.get():
                 v_id.set(v_id.get()-1)
                 tview.selection_set(v_id.get())
-                tview.see(tview.selection())
+            if v_id.get() > v_from.get():
+                tview.see(v_id.get()-1)
+            else:
+                tview.yview_moveto(0)
             txt_de.focus()
 
         def cmd_move_down(_=None):
@@ -503,7 +530,10 @@ def main():
             if v_id.get() < v_to.get():
                 v_id.set(v_id.get()+1)
                 tview.selection_set(v_id.get())
-                tview.see(tview.selection())
+            if v_id.get() < v_to.get():
+                tview.see(v_id.get()+1)
+            else:
+                tview.yview_moveto(1)
             txt_de.focus()
 
         def cmd_dup_up(_=None):
@@ -615,6 +645,7 @@ def main():
         tview.heading("wt", text="Winning Ticket", anchor="w")
         tv_sb.config(command=tview.yview)
         tview.pack(padx=4, pady=4, fill="both", expand="yes")
+        tview.tag_configure("oddrow", background=BAND_COLOR)
 
         tview.bind("<<TreeviewSelect>>", cmd_tv_select)
 
@@ -641,9 +672,14 @@ def main():
                 v_id.set(r[0]), v_de.set(r[1]), v_do.set(r[2]), v_wt.set(r[3]), v_wn.set(r[4])
 
         def cmd_update_all(_=None):
+            if len(tview.get_children()) > 0:
+                cmd_save()
             tview.delete(*tview.get_children())
             for i in range(v_from.get(), v_to.get()+1):
-                tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"))
+                if i % 2 > 0:
+                    tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"), tags=("oddrow",))
+                else:
+                    tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"))
             response = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
             if response.status_code == 200:
                 results = response.json()
@@ -656,22 +692,17 @@ def main():
                 if c_results:
                     for r in c_results:
                         tview.set(r["basket_id"], "wi", f"{r["last_name"]}, {r["first_name"]}")
-            if v_id.get() < v_from.get():
-                v_id.set(v_from.get())
-            if v_id.get() > v_to.get():
-                v_id.set(v_to.get())
+            v_id.set(v_from.get())
             tview.selection_set(v_id.get())
             tview.see(tview.selection())
             txt_wt.focus()
 
         def cmd_prev_page(_=None):
-            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()-diff), v_to.set(v_to.get()-diff)
             cmd_update_all()
 
         def cmd_next_page(_=None):
-            cmd_save()
             diff = v_to.get()-v_from.get()+1
             v_from.set(v_from.get()+diff), v_to.set(v_to.get()+diff)
             cmd_update_all()
@@ -689,7 +720,7 @@ def main():
                             tview.set(v_id.get(), "wi", f"{c_result["last_name"]}, {c_result["first_name"]}")
 
         def cmd_cancel(_=None):
-            r = tview.item(v_id.get())
+            r = tview.item(v_id.get())["values"]
             v_de.set(r[1]), v_do.set(r[2]), v_wt.set(r[3]), v_wn.set(r[4])
 
         def cmd_copy(_=None):
@@ -704,7 +735,10 @@ def main():
             if v_id.get() > v_from.get():
                 v_id.set(v_id.get()-1)
                 tview.selection_set(v_id.get())
-                tview.see(tview.selection())
+            if v_id.get() > v_from.get():
+                tview.see(v_id.get()-1)
+            else:
+                tview.yview_moveto(0)
             txt_wt.focus()
 
         def cmd_move_down(_=None):
@@ -712,7 +746,10 @@ def main():
             if v_id.get() < v_to.get():
                 v_id.set(v_id.get()+1)
                 tview.selection_set(v_id.get())
-                tview.see(tview.selection())
+            if v_id.get() < v_to.get():
+                tview.see(v_id.get()+1)
+            else:
+                tview.yview_moveto(1)
             txt_wt.focus()
 
         def cmd_dup_up(_=None):
@@ -731,6 +768,9 @@ def main():
                 v_wt.set(result["ticket_id"])
             except:
                 pass
+
+        def cmd_clear_wt(_=None):
+            v_wt.set("")
 
         frm_ranger = ttk.LabelFrame(window, text="Range Control")
         frm_ranger.pack(padx=4, pady=4, fill="x")
@@ -784,6 +824,7 @@ def main():
 
         txt_wt = ttk.Entry(frm_current_record, textvariable=v_wt, width=10)
         txt_wt.grid(column=3, row=1, padx=4, pady=4)
+        window.bind("<Alt-m>", cmd_clear_wt)
 
         btn_save = ttk.Button(frm_current_record, text="Save", command=cmd_save, bootstyle=bootstyle)
         btn_save.grid(column=4, row=1, padx=4, pady=4)
@@ -833,6 +874,7 @@ def main():
         tview.heading("wt", text="Winning Ticket", anchor="w"), tview.heading("wi", text="Winner", anchor="w")
         tv_sb.config(command=tview.yview)
         tview.pack(padx=4, pady=4, fill="both", expand="yes")
+        tview.tag_configure("oddrow", background=BAND_COLOR)
 
         tview.bind("<<TreeviewSelect>>", cmd_tv_select)
 
@@ -856,13 +898,23 @@ def main():
     def cmd_bybasket_both():
         webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}")
 
+    def cmd_view_counts():
+        webbrowser.open(f"{BASE_URL}reports/counts/?api_key={api_key}")
+
+    
+    frm_all_prefixes = ttk.LabelFrame(window, text="All Prefixes")
+    frm_all_prefixes.pack(padx=4, pady=4, fill="x")
+
+    btn_counts = ttk.Button(frm_all_prefixes, text="View Counts", command=cmd_view_counts, bootstyle="secondary")
+    btn_counts.pack(side="left", padx=4, pady=4)
+    
     frm_prefixes = ttk.LabelFrame(window, text="Prefix Selection")
     frm_prefixes.pack(padx=4, pady=4, fill="x")
 
     lbl_prefix = ttk.Label(frm_prefixes, text="Current Prefix: ")
     lbl_prefix.pack(side="left", padx=4, pady=4)
 
-    cmb_prefix = ttk.Combobox(frm_prefixes, state="readonly", values=prefix_names)
+    cmb_prefix = ttk.Combobox(frm_prefixes, state="readonly")
     cmb_prefix.pack(side="left", padx=4, pady=4)
 
     frm_forms = ttk.LabelFrame(window, text="Forms")
@@ -917,6 +969,7 @@ def main():
     lbl_attribution.pack(side="right", padx=4, pady=4)
 
     cmd_check_cfg()
+    prefixes = cmd_get_prefixes()
 
     cmb_prefix.bind("<<ComboboxSelected>>", cmd_set_style)
 
