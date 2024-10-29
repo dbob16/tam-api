@@ -36,7 +36,7 @@ def api_cleaner():
         if response.status_code == 200:
             index = 1
             for v in response.json():
-                tv_api.insert("", "end", iid=index, values=(v["api_key"], v["pc_name"]))
+                tv_api.insert("", "end", iid=index, values=(v["api_key"], v["pc_name"], v["ip_addr"]))
                 index += 1
             lbl_status.config(text="Got API keys successfully", bootstyle="success")
         else:
@@ -60,8 +60,9 @@ def api_cleaner():
     sb_tv = ttk.Scrollbar(frm_tv, orient="vertical")
     sb_tv.pack(side="right", fill="y")
 
-    tv_api = ttk.Treeview(frm_tv, show="headings", columns=("api", "pc"), yscrollcommand=sb_tv.set)
+    tv_api = ttk.Treeview(frm_tv, show="headings", columns=("api", "pc", "ip"), yscrollcommand=sb_tv.set)
     tv_api.heading("api", text="API Key", anchor="w"), tv_api.heading("pc", text="PC Name", anchor="w")
+    tv_api.heading("ip", text="IP Address", anchor="w")
     tv_api.pack(padx=4, pady=4, fill="both", expand="yes")
 
     sb_tv.config(command=tv_api.yview)

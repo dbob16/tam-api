@@ -84,7 +84,7 @@ def check_api_key(in_key:str):
 
 conn, cur = session()
 cur.execute("CREATE TABLE IF NOT EXISTS prefixes (prefix VARCHAR(150) PRIMARY KEY, bootstyle VARCHAR(150) NOT NULL, sort_order INT DEFAULT 1)")
-cur.execute("CREATE TABLE IF NOT EXISTS api_keys (api_key VARCHAR(255) PRIMARY KEY, pc_name VARCHAR(255))")
+cur.execute("CREATE TABLE IF NOT EXISTS api_keys (api_key VARCHAR(255) PRIMARY KEY, pc_name VARCHAR(255), ip_addr VARCHAR(255))")
 conn.commit()
 conn.close()
 
@@ -106,23 +106,23 @@ def get_api_keys(api_key:str=None):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute("SELECT * FROM api_keys ORDER BY pc_name")
-    conn.close()
     results = cur.fetchall()
+    conn.close()
     if not results:
         return []
     r_l = []
     for r in results:
-        r_d = {"api_key": r[0], "pc_name": r[1]}
+        r_d = {"api_key": r[0], "pc_name": r[1], "ip_addr": r[2]}
         r_l.append(r_d)
     return r_l
 
 @app.post("/genapi/")
-def gen_api(in_req:ApiRequest):
+def gen_api(request:Request, in_req:ApiRequest):
     if API_PW and API_PW != in_req.inp_pw:
         raise HTTPException(status_code=401, detail="Password is not correct")
     rtn_key = create_api_key()
     conn, cur = session()
-    cur.execute(f"INSERT INTO api_keys (api_key, pc_name) VALUES (\"{rtn_key}\", \"{in_req.pc_name}\")")
+    cur.execute(f"INSERT INTO api_keys (api_key, pc_name, ip_addr) VALUES (\"{rtn_key}\", \"{in_req.pc_name}\", \"{request.client.host}\")")
     conn.commit()
     conn.close()
     return {"api_key": rtn_key}
@@ -482,5 +482,6 @@ def get_counts(request:Request, api_key:str=None):
         cur.execute(f"SELECT COUNT(DISTINCT CONCAT(first_name, last_name, phone_number)) FROM `{l[0]}_tickets`")
         l.append(cur.fetchone()[0])
         l[0] = l[0].capitalize()
+    conn.close()
     headers = ("Prefix", "All Ticket Lines", "Unique Buyers")
     return templates.TemplateResponse(request=request, name="counts.html", context={"headers": headers, "records": prefixes})
