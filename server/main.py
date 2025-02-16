@@ -12,6 +12,7 @@ dotenv.load_dotenv('.env')
 dotenv.load_dotenv('.env.secret')
 DB_TYPE = os.getenv("DB_TYPE", "LOCAL")
 API_PW = os.getenv("API_PW", None)
+SS_MODE = os.getenv("SS_MODE", "off")
 
 if DB_TYPE == "LOCAL":
     from sqlite3 import connect
@@ -74,9 +75,16 @@ def create_api_key():
     rnd_str = string.ascii_uppercase + string.ascii_lowercase + string.digits
     return "".join(random.choice(rnd_str) for i in range(0, 16))
 
-def check_api_key(in_key:str):
+def check_api_key(in_key:str, request:Request):
+    if 'x-real-ip' in request.headers:
+        client_ip = request.headers['x-real-ip']
+    else:
+        client_ip = request.client.host
     conn, cur = session()
-    cur.execute(f"SELECT api_key from api_keys WHERE api_key = \"{in_key}\"")
+    if SS_MODE != "off":
+        cur.execute(f"SELECT api_key from api_keys WHERE api_key = \"{in_key}\" AND ip_addr = \"{client_ip}\"")
+    else:
+        cur.execute(f"SELECT api_key from api_keys WHERE api_key = \"{in_key}\"")
     result = cur.fetchone()
     if result:
         return True
@@ -104,8 +112,8 @@ while True:
 app = FastAPI(docs_url=None, redoc_url=None)
 
 @app.get("/")
-def index(api_key:str=None):
-    if API_PW and not check_api_key(api_key):
+def index(request:Request, api_key:str=None):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     return {"whoami": "TAM-Server"}
 
@@ -114,8 +122,8 @@ def health_check():
     return {"status": "healthy"}
 
 @app.get("/api_keys/")
-def get_api_keys(api_key:str=None):
-    if API_PW and not check_api_key(api_key):
+def get_api_keys(request:Request, api_key:str=None):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute("SELECT * FROM api_keys ORDER BY pc_name")
@@ -145,8 +153,8 @@ def gen_api(request:Request, in_req:ApiRequest):
     return {"api_key": rtn_key}
 
 @app.delete("/delapi/")
-def del_api(auth_key:str=None, api_key:str=None, pc_name:str=None):
-    if API_PW and not check_api_key(auth_key):
+def del_api(request:Request, auth_key:str=None, api_key:str=None, pc_name:str=None):
+    if API_PW and not check_api_key(auth_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     if api_key and pc_name:
         conn, cur = session()
@@ -170,8 +178,8 @@ def del_api(auth_key:str=None, api_key:str=None, pc_name:str=None):
         return {"success": False, "response": "Nothing provided, can't act"}
 
 @app.get("/prefixes/")
-def list_prefixes(api_key:str=None):
-    if API_PW and not check_api_key(api_key):
+def list_prefixes(request:Request, api_key:str=None):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute("SELECT * FROM prefixes ORDER BY sort_order, prefix")
@@ -187,9 +195,9 @@ def list_prefixes(api_key:str=None):
         return r_l
 
 @app.get("/prefixes/{prefix}/")
-def get_prefix(prefix:str, api_key:str=None):
+def get_prefix(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"SELECT * FROM prefixes WHERE prefix = '{prefix}'")
@@ -202,10 +210,10 @@ def get_prefix(prefix:str, api_key:str=None):
         return r_d
 
 @app.post("/prefix/")
-def post_prefix(prefix:Prefix, api_key:str=None):
+def post_prefix(request:Request, prefix:Prefix, api_key:str=None):
     prefix.prefix = prefix.prefix.lower()
     prefix.bootstyle = prefix.bootstyle.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     try:
         conn, cur = session()
@@ -219,9 +227,9 @@ def post_prefix(prefix:Prefix, api_key:str=None):
         return {"success": False, "exception": e}
 
 @app.delete("/delprefix/")
-def delete_prefix(prefix:str, api_key:str=None):
+def delete_prefix(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"DELETE FROM prefixes WHERE prefix = \"{prefix}\"")
@@ -230,9 +238,9 @@ def delete_prefix(prefix:str, api_key:str=None):
     return {"success": True, "result": f"Deleted {prefix} from the prefixes table"}
 
 @app.get("/tickets/{prefix}/")
-def get_all_tickets(prefix:str, api_key:str=None):
+def get_all_tickets(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_tickets` ORDER BY ticket_id")
@@ -248,9 +256,9 @@ def get_all_tickets(prefix:str, api_key:str=None):
         return r_l
 
 @app.get("/tickets/{prefix}/{ticket_id}/")
-def get_single_ticket(prefix:str, ticket_id:int, api_key:str=None):
+def get_single_ticket(request:Request, prefix:str, ticket_id:int, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_tickets` WHERE ticket_id={ticket_id}")
@@ -263,9 +271,9 @@ def get_single_ticket(prefix:str, ticket_id:int, api_key:str=None):
         return r_d
 
 @app.get("/tickets/{prefix}/{id_from}/{id_to}/")
-def get_range_tickets(prefix:str, id_from:int, id_to:int, api_key:str=None):
+def get_range_tickets(request:Request, prefix:str, id_from:int, id_to:int, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_tickets` WHERE ticket_id BETWEEN {id_from} AND {id_to}")
@@ -281,9 +289,9 @@ def get_range_tickets(prefix:str, id_from:int, id_to:int, api_key:str=None):
         return r_l
 
 @app.get("/random/tickets/{prefix}/")
-def get_random_ticket(prefix:str, api_key:str=None):
+def get_random_ticket(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_tickets` ORDER BY {rand()} LIMIT 1")
@@ -295,9 +303,9 @@ def get_random_ticket(prefix:str, api_key:str=None):
         return {"ticket_id": r[0], "first_name": r[1], "last_name": r[2], "phone_number": r[3], "preference": r[4]}
 
 @app.post("/ticket/{prefix}/")
-def post_ticket(prefix:str, t:Ticket, api_key:str=None):
+def post_ticket(request:Request, prefix:str, t:Ticket, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     try:
         conn, cur = session()
@@ -309,9 +317,9 @@ def post_ticket(prefix:str, t:Ticket, api_key:str=None):
         return {"success": False, "exception": e}
 
 @app.get("/baskets/{prefix}/")
-def get_all_baskets(prefix:str, api_key:str=None):
+def get_all_baskets(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_baskets` ORDER BY basket_id")
@@ -327,9 +335,9 @@ def get_all_baskets(prefix:str, api_key:str=None):
         return r_l
 
 @app.get("/baskets/{prefix}/{basket_id}/")
-def get_single_basket(prefix:str, basket_id:int, api_key:str=None):
+def get_single_basket(request:Request, prefix:str, basket_id:int, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_baskets` WHERE basket_id = {basket_id}")
@@ -342,9 +350,9 @@ def get_single_basket(prefix:str, basket_id:int, api_key:str=None):
         return r_d
 
 @app.get("/baskets/{prefix}/{id_from}/{id_to}/")
-def get_range_baskets(prefix:str, id_from:int, id_to:int, api_key:str=None):
+def get_range_baskets(request:Request, prefix:str, id_from:int, id_to:int, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"SELECT * FROM `{prefix}_baskets` WHERE basket_id BETWEEN {id_from} AND {id_to} ORDER BY basket_id")
@@ -360,9 +368,9 @@ def get_range_baskets(prefix:str, id_from:int, id_to:int, api_key:str=None):
         return r_l
 
 @app.post("/basket/{prefix}/")
-def post_basket(prefix:str, b:Basket, api_key:str=None):
+def post_basket(request:Request, prefix:str, b:Basket, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     try:
         conn, cur = session()
@@ -374,9 +382,9 @@ def post_basket(prefix:str, b:Basket, api_key:str=None):
         return {"success": False, "exception": e}
 
 @app.get("/combined/{prefix}/")
-def combined_all(prefix:str, api_key:str=None):
+def combined_all(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"""SELECT b.basket_id, b.description, b.donors, b.winning_ticket, t.first_name, t.last_name, t.phone_number, t.preference
@@ -396,9 +404,9 @@ def combined_all(prefix:str, api_key:str=None):
         return []
 
 @app.get("/combined/{prefix}/{basket_id}/")
-def combined_single(prefix:str, basket_id:int, api_key:str=None):
+def combined_single(request:Request, prefix:str, basket_id:int, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"""SELECT b.basket_id, b.description, b.donors, b.winning_ticket, t.first_name, t.last_name, t.phone_number, t.preference
@@ -416,9 +424,9 @@ def combined_single(prefix:str, basket_id:int, api_key:str=None):
         return []
 
 @app.get("/combined/{prefix}/{id_from}/{id_to}/")
-def combined_range(prefix:str, id_from:int, id_to:int, api_key:str=None):
+def combined_range(request:Request, prefix:str, id_from:int, id_to:int, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     cur.execute(f"""SELECT b.basket_id, b.description, b.donors, b.winning_ticket, t.first_name, t.last_name, t.phone_number, t.preference
@@ -441,7 +449,7 @@ def combined_range(prefix:str, id_from:int, id_to:int, api_key:str=None):
 @app.get("/reports/byname/{prefix}/", response_class=HTMLResponse)
 def report_byname(request:Request, prefix:str, filter:str=None, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     if filter == None:
@@ -465,7 +473,7 @@ def report_byname(request:Request, prefix:str, filter:str=None, api_key:str=None
 @app.get("/reports/bybasket/{prefix}/", response_class=HTMLResponse)
 def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=None):
     prefix = prefix.lower()
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
     if filter == None:
@@ -488,7 +496,7 @@ def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=No
 
 @app.get("/reports/counts/", response_class=HTMLResponse)
 def get_counts(request:Request, api_key:str=None):
-    if API_PW and not check_api_key(api_key):
+    if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API Key")
     conn, cur = session()
     cur.execute("SELECT prefix FROM prefixes ORDER BY sort_order")
