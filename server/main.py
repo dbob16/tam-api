@@ -6,6 +6,7 @@ import random
 import string
 import dotenv
 import os
+import time
 
 dotenv.load_dotenv('.env')
 dotenv.load_dotenv('.env.secret')
@@ -19,7 +20,7 @@ if DB_TYPE == "MYSQL":
     from mysql.connector import connect
     MYSQL_HOST = os.getenv("MYSQL_HOST", "mariadb")
     MYSQL_PORT = os.getenv("MYSQL_PORT", 3306)
-    MYSQL_USER = os.getenv("MYSQL_USER", "root")
+    MYSQL_USER = os.getenv("MYSQL_USER", "tam")
     MYSQL_PASSWD = os.getenv("MYSQL_PASSWD", "password")
     MYSQL_DB = os.getenv("MYSQL_DB", "tam")
 
@@ -82,11 +83,23 @@ def check_api_key(in_key:str):
     else:
         return False
 
-conn, cur = session()
-cur.execute("CREATE TABLE IF NOT EXISTS prefixes (prefix VARCHAR(150) PRIMARY KEY, bootstyle VARCHAR(150) NOT NULL, sort_order INT DEFAULT 1)")
-cur.execute("CREATE TABLE IF NOT EXISTS api_keys (api_key VARCHAR(255) PRIMARY KEY, pc_name VARCHAR(255), ip_addr VARCHAR(255))")
-conn.commit()
-conn.close()
+def db_init():
+    with open('schema.sql', 'r') as f:
+        contents = f.read()
+        db_schema = contents.split(';')
+    conn, cur = session()
+    for stmt in db_schema:
+        cur.execute(stmt)
+    conn.commit()
+    conn.close()
+
+while True:
+    try:
+        db_init()
+        break
+    except:
+        print("DB Connection Failed. Trying again in 10 seconds")
+        time.sleep(10)
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -120,9 +133,13 @@ def get_api_keys(api_key:str=None):
 def gen_api(request:Request, in_req:ApiRequest):
     if API_PW and API_PW != in_req.inp_pw:
         raise HTTPException(status_code=401, detail="Password is not correct")
+    if 'x-real-ip' in request.headers:
+        client_ip = request.headers['x-real-ip']
+    else:
+        client_ip = request.client.host
     rtn_key = create_api_key()
     conn, cur = session()
-    cur.execute(f"INSERT INTO api_keys (api_key, pc_name, ip_addr) VALUES (\"{rtn_key}\", \"{in_req.pc_name}\", \"{request.client.host}\")")
+    cur.execute(f"INSERT INTO api_keys (api_key, pc_name, ip_addr) VALUES (\"{rtn_key}\", \"{in_req.pc_name}\", \"{client_ip}\")")
     conn.commit()
     conn.close()
     return {"api_key": rtn_key}

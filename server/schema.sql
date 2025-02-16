@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS prefixes (
+prefix VARCHAR(150) PRIMARY KEY,
+bootstyle VARCHAR(150) NOT NULL,
+sort_order INT DEFAULT 1);
+
+CREATE TABLE IF NOT EXISTS api_keys (
+api_key VARCHAR(255) PRIMARY KEY,
+pc_name VARCHAR(255),
+ip_addr VARCHAR(255));
