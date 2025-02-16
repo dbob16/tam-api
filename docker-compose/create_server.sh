@@ -1,7 +1,8 @@
-!/bin/bash
-cd certs
-./gen_certs.sh
-cd ..
+#!/bin/bash
+if [ ! -d "certs" ]; then
+mkdir certs
+fi
+openssl req -x509 -newkey rsa:4096 -keyout certs/nginx.key -out certs/nginx.crt -sha256 -days 365 -nodes
 
 echo "# This is the database information." > .env
 echo "DB_USER=tam" >> .env
