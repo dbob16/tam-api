@@ -316,6 +316,26 @@ def main():
             pref = generate_preference()
             v_fn.set(first_name), v_ln.set(last_name), v_pn.set(phone_number), v_pref.set(pref)
 
+        def on_close(window):
+            if not tview.get_children():
+                window.destroy()
+                return
+            if tview.item(v_id.get())["values"] != [v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()]:
+                dialog_response = ttk.dialogs.Messagebox.yesnocancel("Do you want to save before closing?", title="Save?",\
+                    parent=window, alert=None)
+            else:
+                window.destroy()
+                return
+            if dialog_response == "Yes":
+                cmd_save()
+                window.destroy()
+                return
+            elif dialog_response == "No":
+                window.destroy()
+                return
+            elif dialog_response == "Cancel":
+                pass
+
         frm_ranger = ttk.LabelFrame(window, text="Range Control")
         frm_ranger.pack(padx=4, pady=4, fill="x")
 
@@ -440,6 +460,7 @@ def main():
         tview.tag_configure("oddrow", background=BAND_COLOR)
 
         tview.bind("<<TreeviewSelect>>", cmd_tv_select)
+        window.protocol("WM_DELETE_WINDOW", lambda: on_close(window))
 
         txt_from.focus()
 
@@ -545,6 +566,26 @@ def main():
             cmd_copy()
             cmd_move_down()
             cmd_paste()
+        
+        def on_close(window):
+            if not tview.get_children():
+                window.destroy()
+                return
+            if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
+                dialog_response = ttk.dialogs.Messagebox.yesnocancel("Do you want to save before closing?", title="Save?",\
+                    parent=window, alert=None)
+            else:
+                window.destroy()
+                return
+            if dialog_response == "Yes":
+                cmd_save()
+                window.destroy()
+                return
+            elif dialog_response == "No":
+                window.destroy()
+                return
+            elif dialog_response == "Cancel":
+                pass
 
         frm_ranger = ttk.LabelFrame(window, text="Range Control")
         frm_ranger.pack(padx=4, pady=4, fill="x")
@@ -657,6 +698,8 @@ def main():
         tview.tag_configure("oddrow", background=BAND_COLOR)
 
         tview.bind("<<TreeviewSelect>>", cmd_tv_select)
+
+        window.protocol("WM_DELETE_WINDOW", lambda: on_close(window))
 
         txt_from.focus()
 
@@ -780,6 +823,26 @@ def main():
 
         def cmd_clear_wt(_=None):
             v_wt.set("")
+        
+        def on_close(window:ttk.Toplevel):
+            if not tview.get_children():
+                window.destroy()
+                return
+            if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get(), v_wn.get()]:
+                dialog_response = ttk.dialogs.Messagebox.yesnocancel("Do you want to save before closing?", title="Save",\
+                    parent=window, alert=None)
+            else:
+                window.destroy()
+                return
+            if dialog_response == "Yes":
+                cmd_save()
+                window.destroy()
+                return
+            elif dialog_response == "No":
+                window.destroy()
+                return
+            elif dialog_response == "Cancel":
+                pass
 
         frm_ranger = ttk.LabelFrame(window, text="Range Control")
         frm_ranger.pack(padx=4, pady=4, fill="x")
@@ -897,6 +960,8 @@ def main():
         tview.tag_configure("oddrow", background=BAND_COLOR)
 
         tview.bind("<<TreeviewSelect>>", cmd_tv_select)
+
+        window.protocol("WM_DELETE_WINDOW", lambda: on_close(window))
 
         txt_from.focus()
 
