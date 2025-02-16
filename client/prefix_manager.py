@@ -6,7 +6,9 @@ from configparser import ConfigParser
 
 bootstyle_values = ("primary", "secondary", "success", "info", "warning", "danger", "light", "dark")
 
-if os.name == "nt":
+if os.path.exists("config.ini"):
+    config_path = "config.ini"
+elif os.name == "nt":
     home_path = os.getenv("APPDATA")
     if not os.path.exists(f"{home_path}\\TAM"):
         os.mkdir(f"{home_path}\\TAM")

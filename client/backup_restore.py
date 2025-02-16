@@ -7,7 +7,9 @@ from httpx import get, post
 from configparser import ConfigParser
 from getpass import getpass
 
-if os.name == "nt":
+if os.path.exists("config.ini"):
+    config_path = "config.ini"
+elif os.name == "nt":
     home_path = os.getenv("APPDATA")
     if not os.path.exists(f"{home_path}\\TAM"):
         os.mkdir(f"{home_path}\\TAM")
