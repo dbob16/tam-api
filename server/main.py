@@ -106,8 +106,8 @@ while True:
         db_init()
         break
     except:
-        print("DB Connection Failed. Trying again in 10 seconds")
-        time.sleep(10)
+        print("DB Connection Failed. Trying again in 3 seconds")
+        time.sleep(3)
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
