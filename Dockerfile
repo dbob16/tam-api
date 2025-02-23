@@ -1,4 +1,6 @@
-FROM python
+FROM python:slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tam
 COPY ./requirements-server.txt /tam/requirements-server.txt
