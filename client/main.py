@@ -6,6 +6,11 @@ from configparser import ConfigParser
 from prefix_manager import prefix_manager
 from api_cleaner import api_cleaner
 
+server = {}
+BASE_URL = ""
+prefs = {}
+api_key = ""
+
 try:
     import names
     def generate_name():
@@ -41,37 +46,47 @@ else:
     config_path = f"{home_path}/.config/TAM/config.ini"
 
 def main():
-    config = ConfigParser()
-    try:
-        config.read(config_path)
-        server = config["server"]
-        BASE_URL = server["BASE_URL"]
-        prefs = config["prefs"]
-    except:
-        config["server"] = {
-            "BASE_URL": "http://localhost:8000/"
-        }
-        config["prefs"] = {
-            "theme": "cyborg"
-        }
-        with open(config_path, 'w') as file:
-            config.write(file)
-        server = config["server"]
-        BASE_URL = server["BASE_URL"]
-        prefs = config["prefs"]
+    def refresh_config():
+        config = ConfigParser()
+        global server
+        global BASE_URL
+        global prefs
+        global api_key
+        try:
+            config.read(config_path)
+            server = config["server"]
+            BASE_URL = server["BASE_URL"]
+            prefs = config["prefs"]
+        except:
+            config["server"] = {
+                "BASE_URL": "http://localhost:8000/"
+            }
+            config["prefs"] = {
+                "theme": "cyborg"
+            }
+            with open(config_path, 'w') as file:
+                config.write(file)
+            server = config["server"]
+            BASE_URL = server["BASE_URL"]
+            prefs = config["prefs"]
 
-    try:
-        api_key = server["api_key"]
-    except:
-        api_key = None
+        try:
+            api_key = server["api_key"]
+        except:
+            api_key = None
 
-    window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs["theme"], iconphoto='icon.png')
+    refresh_config()
+
+    window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs['theme'], iconphoto='icon.png')
     v_status = ttk.StringVar(window)
+    style = ttk.Style()
 
-    if window.style.theme.type == "dark":
-        BAND_COLOR = "#202020"
-    elif window.style.theme.type == "light":
-        BAND_COLOR = "#DDDDDD"
+    def band_color():
+        if window.style.theme.type == "dark":
+            BAND_COLOR = "#202020"
+        elif window.style.theme.type == "light":
+            BAND_COLOR = "#DDDDDD"
+        return BAND_COLOR
 
     def cmd_check_cfg():
         try:
@@ -96,7 +111,8 @@ def main():
                     l_pr.append(r["prefix"].capitalize())
                     l_di[r["prefix"]] = {"bootstyle": r["bootstyle"], "sort_order": r["sort_order"]}
                 cmb_prefix.config(values=l_pr)
-                return l_di
+                prefixes.clear()
+                prefixes.update(**l_di)
         except:
             return {"prefix": "No Connection", "bootstyle": "secondary"}
 
@@ -124,6 +140,7 @@ def main():
         v_api_sts = ttk.StringVar(window)
 
         def save():
+            config = ConfigParser()
             config["server"] = {
                 "BASE_URL": v_base_url.get()
             }
@@ -135,6 +152,9 @@ def main():
             with open(config_path, 'w') as file:
                 config.write(file)
             window.destroy()
+            refresh_config()
+            style.theme_use(themename=prefs['theme'])
+            cmd_check_cfg()
         
         def cancel():
             window.destroy()
@@ -147,6 +167,12 @@ def main():
                 v_api_sts.set("API Key Generated and Appended to Save")
             except:
                 v_api_sts.set("Password may not be correct, please try again.")
+
+        def launch_prefix_manager():
+            prefix_manager(BASE_URL, api_key)
+
+        def launch_api_cleaner():
+            api_cleaner(BASE_URL, api_key)
 
         frm_server = ttk.LabelFrame(window, text="Server Settings")
         frm_server.pack(padx=4, pady=4, fill="x")
@@ -188,7 +214,7 @@ def main():
         cmb_theme.grid(row=0, column=1, padx=4, pady=4)
         cmb_theme.set(prefs["theme"])
 
-        lbl_caution = ttk.Label(window, text="Settings won't take effect until you exit entire application and reopen.", anchor="center")
+        lbl_caution = ttk.Label(window, text="Settings take effect once you hit save.", anchor="center")
         lbl_caution.pack(padx=4, pady=4, fill="x")
 
         frm_btn = ttk.Frame(window)
@@ -203,15 +229,16 @@ def main():
         frm_other_tools = ttk.LabelFrame(window, text="Other Tools")
         frm_other_tools.pack(padx=4, pady=4, fill="x")
 
-        btn_prefix_manager = ttk.Button(frm_other_tools, text="Prefix Manager", command=prefix_manager)
+        btn_prefix_manager = ttk.Button(frm_other_tools, text="Prefix Manager", command=launch_prefix_manager)
         btn_prefix_manager.pack(side="left", padx=4, pady=4)
 
-        btn_api_cleaner = ttk.Button(frm_other_tools, text="Manage API Keys", command=api_cleaner)
+        btn_api_cleaner = ttk.Button(frm_other_tools, text="Manage API Keys", command=launch_api_cleaner)
         btn_api_cleaner.pack(side="left", padx=4, pady=4)
 
     def cmd_ticket_form():
         prefix = cmb_prefix.get().lower()
         bootstyle = prefixes[prefix]["bootstyle"]
+        BAND_COLOR = band_color()
         window = ttk.Toplevel(title=f"{prefix.capitalize()} Tickets")
         v_from, v_to = ttk.IntVar(window), ttk.IntVar(window)
         v_id, v_fn, v_ln, v_pn, v_pref = ttk.IntVar(window), ttk.StringVar(window), ttk.StringVar(window), ttk.StringVar(window), ttk.StringVar(window)
@@ -469,6 +496,7 @@ def main():
     def cmd_basket_form():
         prefix = cmb_prefix.get().lower()
         bootstyle = prefixes[prefix]["bootstyle"]
+        BAND_COLOR = band_color()
         window = ttk.Toplevel(title=f"{prefix.capitalize()} Baskets")
         v_from, v_to = ttk.IntVar(window), ttk.IntVar(window)
         v_id, v_de, v_do, v_wt = ttk.IntVar(window), ttk.StringVar(window), ttk.StringVar(window), ttk.IntVar(window)
@@ -709,6 +737,7 @@ def main():
         prefix = cmb_prefix.get().lower()
         bootstyle = prefixes[prefix]["bootstyle"]
         window = ttk.Toplevel(title=f"{prefix.capitalize()} Drawing")
+        BAND_COLOR = band_color()
         v_from, v_to = ttk.IntVar(window), ttk.IntVar(window)
         v_id, v_de, v_do, v_wt = ttk.IntVar(window), ttk.StringVar(window), ttk.StringVar(window), ttk.IntVar(window)
         v_wn = ttk.StringVar(window)
@@ -1004,6 +1033,9 @@ def main():
     cmb_prefix = ttk.Combobox(frm_prefixes, state="readonly")
     cmb_prefix.pack(side="left", padx=4, pady=4)
 
+    btn_update_prefixes = ttk.Button(frm_prefixes, text="Update Prefixes", command=cmd_get_prefixes, bootstyle="secondary")
+    btn_update_prefixes.pack(side="left", padx=4, pady=4)
+
     frm_forms = ttk.LabelFrame(window, text="Forms")
     frm_forms.pack(padx=4, pady=4, fill="x")
 
@@ -1056,7 +1088,8 @@ def main():
     lbl_attribution.pack(side="right", padx=4, pady=4)
 
     cmd_check_cfg()
-    prefixes = cmd_get_prefixes()
+    prefixes = {}
+    cmd_get_prefixes()
 
     cmb_prefix.bind("<<ComboboxSelected>>", cmd_set_style)
 

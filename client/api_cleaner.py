@@ -3,33 +3,7 @@ import ttkbootstrap as ttk
 from httpx import get, delete
 from configparser import ConfigParser
 
-if os.path.exists("config.ini"):
-    config_path = "config.ini"
-elif os.name == "nt":
-    home_path = os.getenv("APPDATA")
-    if not os.path.exists(f"{home_path}\\TAM"):
-        os.mkdir(f"{home_path}\\TAM")
-    config_path = f"{home_path}\\TAM\\config.ini"
-else:
-    home_path = os.path.expanduser("~")
-    if not os.path.exists(f"{home_path}/.config/TAM"):
-        os.mkdir(f"{home_path}/.config/TAM")
-    config_path = f"{home_path}/.config/TAM/config.ini"
-
-config = ConfigParser()
-config.read(config_path)
-
-try:
-    BASE_URL = config["server"]["base_url"]
-except:
-    BASE_URL = "http://localhost:8000/"
-
-try:
-    api_key = config["server"]["api_key"]
-except:
-    api_key = None
-
-def api_cleaner():
+def api_cleaner(BASE_URL:str=None, api_key:str=None):
     window = ttk.Toplevel(title="TAM API cleaner")
 
     def get_api_keys():

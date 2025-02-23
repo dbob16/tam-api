@@ -2,37 +2,10 @@ import os
 import ttkbootstrap as ttk 
 import webbrowser
 from httpx import get, post, delete
-from configparser import ConfigParser
 
 bootstyle_values = ("primary", "secondary", "success", "info", "warning", "danger", "light", "dark")
 
-if os.path.exists("config.ini"):
-    config_path = "config.ini"
-elif os.name == "nt":
-    home_path = os.getenv("APPDATA")
-    if not os.path.exists(f"{home_path}\\TAM"):
-        os.mkdir(f"{home_path}\\TAM")
-    config_path = f"{home_path}\\TAM\\config.ini"
-else:
-    home_path = os.path.expanduser("~")
-    if not os.path.exists(f"{home_path}/.config/TAM"):
-        os.mkdir(f"{home_path}/.config/TAM")
-    config_path = f"{home_path}/.config/TAM/config.ini"
-
-config = ConfigParser()
-config.read(config_path)
-
-try:
-    BASE_URL = config["server"]["base_url"]
-except:
-    BASE_URL = "http://localhost/"
-
-try:
-    api_key = config["server"]["api_key"]
-except:
-    api_key = None
-
-def prefix_manager():
+def prefix_manager(BASE_URL:str=None, api_key:str=None):
     window = ttk.Toplevel(title="TAM Prefix Manager")
     v_status = ttk.StringVar(window)
     d_current = {}
