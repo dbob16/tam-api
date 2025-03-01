@@ -84,6 +84,8 @@ def main():
     style = ttk.Style()
     def reconfig_style():
         style.configure('.', font=("", font_size))
+        if HIGH_DPI == "on":
+            style.configure('Treeview', rowheight=42)
         window.option_add('*TCombobox*Listbox.font', ('', font_size))
         window.option_add('*TCombobox.font', ('', font_size))
         window.option_add('*TEntry.font', ('', font_size))
@@ -93,7 +95,6 @@ def main():
         if HIGH_DPI == "on" and os.name != "nt":
             global font_size
             global high_dpi_obj
-            style.configure('Treeview', rowheight=42)
             font_size = 12
             high_dpi_obj = utility.enable_high_dpi_awareness(root=window, scaling=1.75)
 
