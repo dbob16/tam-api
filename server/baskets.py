@@ -68,3 +68,18 @@ def post_basket(request:Request, prefix:str, b:Basket, api_key:str=None):
         return {"success": True, "posted_basket": f"Prefix: {prefix} Details: {b.basket_id} {b.description} {b.donors} {b.winning_ticket}"}
     except Exception as e:
         return {"success": False, "exception": e}
+
+@router.post("/baskets/{prefix}/")
+def post_basket(request:Request, prefix:str, baskets:list[Basket], api_key:str=None):
+    prefix = prefix.lower()
+    if API_PW and not check_api_key(api_key, request):
+        raise HTTPException(status_code=401, detail="Invalid API key.")
+    try:
+        conn, cur = session()
+        for b in baskets:
+            cur.execute(f"REPLACE INTO `{prefix}_baskets` (basket_id, description, donors, winning_ticket) VALUES ({b.basket_id}, \"{b.description}\", \"{b.donors}\", {b.winning_ticket})")
+        conn.commit()
+        conn.close()
+        return {"success": True}
+    except Exception as e:
+        return HTTPException(status_code=500, detail={"success": False, "exception": e})

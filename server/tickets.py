@@ -82,3 +82,18 @@ def post_ticket(request:Request, prefix:str, t:Ticket, api_key:str=None):
         return {"success": True, "posted_ticket": f"Prefix: {prefix} Details: {t.ticket_id} {t.first_name} {t.last_name} {t.phone_number} {t.preference}"}
     except Exception as e:
         return {"success": False, "exception": e}
+
+@router.post("/tickets/{prefix}/")
+def post_tickets(request:Request, prefix:str, tickets:list[Ticket], api_key:str=None):
+    prefix = prefix.lower()
+    if API_PW and not check_api_key(api_key, request):
+        raise HTTPException(status_code=401, detail="Invalid API key.")
+    try:
+        conn, cur = session()
+        for t in tickets:
+            cur.execute(f"REPLACE INTO `{prefix}_tickets` (ticket_id, first_name, last_name, phone_number, preference) VALUES ({t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
+        conn.commit()
+        conn.close()
+        return {"success": True}
+    except Exception as e:
+        return HTTPException(status_code=500, detail={"success": False, "exception": e})

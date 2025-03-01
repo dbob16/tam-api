@@ -51,7 +51,7 @@ def post_prefix(request:Request, prefix:Prefix, api_key:str=None):
         conn.close()
         return {"success": True, "created_prefix": f"{prefix.prefix} | {prefix.bootstyle} | {prefix.sort_order}"}
     except Exception as e:
-        return {"success": False, "exception": e}
+        return HTTPException(status_code=500, detail={"success": False, "exception": e})
 
 @router.delete("/delprefix/")
 def delete_prefix(request:Request, prefix:str, api_key:str=None):

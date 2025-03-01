@@ -62,12 +62,18 @@ def get_counts(request:Request, api_key:str=None):
     conn, cur = session()
     cur.execute("SELECT prefix FROM prefixes ORDER BY sort_order")
     prefixes = [[v[0]] for v in cur.fetchall()]
+    total_count, unique_count = 0, 0
     for l in prefixes:
         cur.execute(f"SELECT COUNT(*) FROM `{l[0]}_tickets`")
-        l.append(cur.fetchone()[0])
+        row_count = cur.fetchone()[0]
+        total_count += row_count
+        l.append(row_count)
         cur.execute(f"SELECT COUNT(DISTINCT CONCAT(first_name, last_name, phone_number)) FROM `{l[0]}_tickets`")
-        l.append(cur.fetchone()[0])
+        distinct_count = cur.fetchone()[0]
+        unique_count += distinct_count
+        l.append(distinct_count)
         l[0] = l[0].capitalize()
+    prefixes.append(["Totals", total_count, unique_count])
     conn.close()
     headers = ("Prefix", "All Ticket Lines", "Unique Buyers")
     return templates.TemplateResponse(request=request, name="counts.html", context={"headers": headers, "records": prefixes})

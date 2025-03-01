@@ -1,19 +1,24 @@
 import os
 import ttkbootstrap as ttk 
 import webbrowser
+import sys
 from httpx import get, post
 from configparser import ConfigParser
+from ttkbootstrap import utility
 from tickets import ticket_form
 from baskets import basket_form
 from drawing import drawing_form
 from prefix_manager import prefix_manager
 from api_cleaner import api_cleaner
+from backup_restore import backup_form, backup, restore, ibackup
 
 server = {}
 BASE_URL = ""
 prefs = {}
+HIGH_DPI = "off"
 api_key = ""
 BAND_COLOR = ""
+font_size = 10
 
 if os.path.exists("config.ini"):
     config_path = "config.ini"
@@ -28,41 +33,72 @@ else:
         os.mkdir(f"{home_path}/.config/TAM")
     config_path = f"{home_path}/.config/TAM/config.ini"
 
+def refresh_config():
+    config = ConfigParser()
+    global server
+    global BASE_URL
+    global prefs
+    global api_key
+    global HIGH_DPI
+    try:
+        config.read(config_path)
+        server = config["server"]
+        BASE_URL = server["BASE_URL"]
+        prefs = config["prefs"]
+        HIGH_DPI = prefs["high_dpi"]
+    except:
+        config["server"] = {
+            "BASE_URL": "http://localhost:8000/"
+        }
+        config["prefs"] = {
+            "theme": "cyborg",
+            "high_dpi": "off"
+        }
+        with open(config_path, 'w') as file:
+            config.write(file)
+        server = config["server"]
+        BASE_URL = server["BASE_URL"]
+        prefs = config["prefs"]
+        HIGH_DPI = prefs["high_dpi"]
+
+    try:
+        api_key = server["api_key"]
+    except:
+        api_key = None
+
+refresh_config()
+
 def main():
-    def refresh_config():
-        config = ConfigParser()
-        global server
-        global BASE_URL
-        global prefs
-        global api_key
-        try:
-            config.read(config_path)
-            server = config["server"]
-            BASE_URL = server["BASE_URL"]
-            prefs = config["prefs"]
-        except:
-            config["server"] = {
-                "BASE_URL": "http://localhost:8000/"
-            }
-            config["prefs"] = {
-                "theme": "cyborg"
-            }
-            with open(config_path, 'w') as file:
-                config.write(file)
-            server = config["server"]
-            BASE_URL = server["BASE_URL"]
-            prefs = config["prefs"]
-
-        try:
-            api_key = server["api_key"]
-        except:
-            api_key = None
-
-    refresh_config()
-
-    window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs['theme'], iconphoto='icon.png')
+    real_path = os.path.realpath(__file__)
+    if os.name == "nt":
+        icon_path = os.path.join(real_path.rsplit("\\", maxsplit=1)[0], "icon.png")
+    else:
+        icon_path = os.path.join(real_path.rsplit("/", maxsplit=1)[0], "icon.png")
+    if HIGH_DPI == "on" and os.name == "nt":
+        global font_size
+        global high_dpi_obj
+        font_size = 12
+        high_dpi_obj = utility.enable_high_dpi_awareness(root=window, scaling=1.75)
+    window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs['theme'], iconphoto=icon_path)
     v_status = ttk.StringVar(window)
     style = ttk.Style()
+    def reconfig_style():
+        style.configure('.', font=("", font_size))
+        window.option_add('*TCombobox*Listbox.font', ('', font_size))
+        window.option_add('*TCombobox.font', ('', font_size))
+        window.option_add('*TEntry.font', ('', font_size))
+        window.option_add('*TSpinbox.font', ('', font_size))
+        window.option_add('*Treeview.font', ('', font_size))
+    def linux_hidipi():
+        if HIGH_DPI == "on" and os.name != "nt":
+            global font_size
+            global high_dpi_obj
+            style.configure('Treeview', rowheight=42)
+            font_size = 12
+            high_dpi_obj = utility.enable_high_dpi_awareness(root=window, scaling=1.75)
+
+    linux_hidipi()
+    reconfig_style()
 
     def set_band():
         global BAND_COLOR
@@ -121,6 +157,9 @@ def main():
             v_api.set(api_key)
         v_api_name = ttk.StringVar(window)
         v_api_sts = ttk.StringVar(window)
+        v_high_dpi = ttk.StringVar(window)
+        if 'high_dpi' in prefs:
+            v_high_dpi.set(prefs['high_dpi'])
 
         def save():
             config = ConfigParser()
@@ -130,7 +169,8 @@ def main():
             if v_api.get():
                 config["server"]["api_key"] = v_api.get()
             config["prefs"] = {
-                "theme": cmb_theme.get()
+                "theme": cmb_theme.get(),
+                "high_dpi": v_high_dpi.get()
             }
             with open(config_path, 'w') as file:
                 config.write(file)
@@ -197,6 +237,12 @@ def main():
         cmb_theme.grid(row=0, column=1, padx=4, pady=4)
         cmb_theme.set(prefs["theme"])
 
+        lbl_high_dpi = ttk.Label(frm_prefs, text="High DPI")
+        lbl_high_dpi.grid(row=1, column=0, padx=4, pady=4)
+
+        chk_high_dpi = ttk.Checkbutton(frm_prefs, variable=v_high_dpi, onvalue="on", offvalue="off", textvariable=v_high_dpi, bootstyle="toolbutton")
+        chk_high_dpi.grid(row=1, column=1, padx=4, pady=4)
+
         lbl_caution = ttk.Label(window, text="Settings take effect once you hit save.", anchor="center")
         lbl_caution.pack(padx=4, pady=4, fill="x")
 
@@ -248,7 +294,9 @@ def main():
     def cmd_view_counts():
         webbrowser.open(f"{BASE_URL}reports/counts/?api_key={api_key}")
 
-    
+    def cmd_backup_form(_=None):
+        backup_form(BASE_URL, api_key)
+
     frm_all_prefixes = ttk.LabelFrame(window, text="All Prefixes")
     frm_all_prefixes.pack(padx=4, pady=4, fill="x")
 
@@ -325,7 +373,24 @@ def main():
 
     cmb_prefix.bind("<<ComboboxSelected>>", cmd_set_style)
 
+    window.bind("<Control-b>", cmd_backup_form)
+    window.bind("<Control-B>", cmd_backup_form)
+
     window.mainloop()
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "backup":
+            print(backup(BASE_URL, api_key, sys.argv[2]))
+        elif sys.argv[1] == "ibackup":
+            try:
+                minutes = int(sys.argv[3])
+            except:
+                print("Please enter a number for how many minutes between backups after path.")
+            ibackup(BASE_URL, api_key, sys.argv[2], minutes)
+        elif sys.argv[1] == "restore":
+            print(restore(BASE_URL, api_key, sys.argv[2]))
+        else:
+            main()
+    else:
+        main()
