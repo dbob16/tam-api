@@ -78,7 +78,7 @@ def main():
         global font_size
         global high_dpi_obj
         font_size = 12
-        high_dpi_obj = utility.enable_high_dpi_awareness(root=window, scaling=1.75)
+        high_dpi_obj = utility.enable_high_dpi_awareness(scaling=1.75)
     window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs['theme'], iconphoto=icon_path)
     v_status = ttk.StringVar(window)
     style = ttk.Style()
@@ -86,6 +86,8 @@ def main():
         style.configure('.', font=("", font_size))
         if HIGH_DPI == "on":
             style.configure('Treeview', rowheight=42)
+        else:
+            style.configure('Treeview', rowheight=30)
         window.option_add('*TCombobox*Listbox.font', ('', font_size))
         window.option_add('*TCombobox.font', ('', font_size))
         window.option_add('*TEntry.font', ('', font_size))
