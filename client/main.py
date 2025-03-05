@@ -87,7 +87,7 @@ def main():
         if HIGH_DPI == "on":
             style.configure('Treeview', rowheight=42)
         else:
-            style.configure('Treeview', rowheight=30)
+            style.configure('Treeview', rowheight=35)
         window.option_add('*TCombobox*Listbox.font', ('', font_size))
         window.option_add('*TCombobox.font', ('', font_size))
         window.option_add('*TEntry.font', ('', font_size))
