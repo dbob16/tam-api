@@ -15,15 +15,15 @@ def report_byname(request:Request, prefix:str, filter:str=None, api_key:str=None
     conn, cur = session()
     if filter == None:
         select_title = "Winners - All Preferences"
-        filter_line = ""
+        filter_line = f"WHERE b.prefix = \"{prefix}\""
     elif filter == "call":
         select_title = "Winners Preferring Calls"
-        filter_line = "WHERE t.preference = \"CALL\""
+        filter_line = f"WHERE b.prefix = \"{prefix}\" AND t.preference = \"CALL\""
     elif filter == "text":
         select_title = "Winners Preferring Texts"
-        filter_line = "WHERE t.preference = \"TEXT\""
+        filter_line = f"WHERE b.prefix = \"{prefix}\"t.preference = \"TEXT\""
     cur.execute(f"""SELECT CONCAT(t.last_name, \", \", t.first_name) as last_first, t.phone_number, b.basket_id, b.winning_ticket, b.description
-    FROM `{prefix}_baskets` b INNER JOIN `{prefix}_tickets` t ON b.winning_ticket = t.ticket_id
+    FROM `baskets` b INNER JOIN `tickets` t ON b.prefix = t.prefix AND b.winning_ticket = t.ticket_id
     {filter_line}
     ORDER BY last_first, t.phone_number, b.basket_id""")
     results = cur.fetchall()
@@ -39,15 +39,15 @@ def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=No
     conn, cur = session()
     if filter == None:
         select_title = "Winners - All Preferences"
-        filter_line = ""
+        filter_line = f"WHERE b.prefix = \"{prefix}\""
     elif filter == "call":
         select_title = "Winners Preferring Calls"
-        filter_line = "WHERE t.preference = \"CALL\""
+        filter_line = f"WHERE b.prefix = \"{prefix}\" AND t.preference = \"CALL\""
     elif filter == "text":
         select_title = "Winners Preferring Texts"
-        filter_line = "WHERE t.preference = \"TEXT\""
+        filter_line = f"WHERE b.prefix = \"{prefix}\" AND t.preference = \"TEXT\""
     cur.execute(f"""SELECT b.basket_id, b.description, b.winning_ticket, CONCAT(t.last_name, \", \", t.first_name) AS last_first, t.phone_number
-    FROM `{prefix}_baskets` b INNER JOIN `{prefix}_tickets` t ON b.winning_ticket = t.ticket_id
+    FROM `baskets` b INNER JOIN `tickets` t ON b.prefix = t.prefix AND b.winning_ticket = t.ticket_id
     {filter_line}
     ORDER BY b.basket_id""")
     results = cur.fetchall()
@@ -64,11 +64,11 @@ def get_counts(request:Request, api_key:str=None):
     prefixes = [[v[0]] for v in cur.fetchall()]
     total_count, unique_count = 0, 0
     for l in prefixes:
-        cur.execute(f"SELECT COUNT(*) FROM `{l[0]}_tickets`")
+        cur.execute(f"SELECT COUNT(*) FROM `tickets` WHERE prefix = \"{l[0]}\"")
         row_count = cur.fetchone()[0]
         total_count += row_count
         l.append(row_count)
-        cur.execute(f"SELECT COUNT(DISTINCT CONCAT(first_name, last_name, phone_number)) FROM `{l[0]}_tickets`")
+        cur.execute(f"SELECT COUNT(DISTINCT CONCAT(first_name, last_name, phone_number)) FROM `tickets` WHERE prefix = \"{prefix}\"")
         distinct_count = cur.fetchone()[0]
         unique_count += distinct_count
         l.append(distinct_count)

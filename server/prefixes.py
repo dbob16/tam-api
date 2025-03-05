@@ -44,8 +44,6 @@ def post_prefix(request:Request, prefix:Prefix, api_key:str=None):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     try:
         conn, cur = session()
-        cur.execute(f"CREATE TABLE IF NOT EXISTS `{prefix.prefix}_tickets` (ticket_id INT PRIMARY KEY, first_name VARCHAR(200), last_name VARCHAR(200), phone_number VARCHAR(200), preference VARCHAR(100))")
-        cur.execute(f"CREATE TABLE IF NOT EXISTS `{prefix.prefix}_baskets` (basket_id INT PRIMARY KEY, description VARCHAR(255), donors VARCHAR(255), winning_ticket INT)")
         cur.execute(f"REPLACE INTO prefixes (prefix, bootstyle, sort_order) VALUES ('{prefix.prefix}', '{prefix.bootstyle}', {prefix.sort_order})")
         conn.commit()
         conn.close()

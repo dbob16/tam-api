@@ -10,7 +10,7 @@ def get_all_tickets(request:Request, prefix:str, api_key:str=None):
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
-    cur.execute(f"SELECT * FROM `{prefix}_tickets` ORDER BY ticket_id")
+    cur.execute(f"SELECT ticket_id, first_name, last_name, phone_number, preference FROM `tickets` WHERE prefix=\"{prefix}\" ORDER BY ticket_id")
     results = cur.fetchall()
     conn.close()
     if not results:
@@ -28,7 +28,7 @@ def get_single_ticket(request:Request, prefix:str, ticket_id:int, api_key:str=No
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
-    cur.execute(f"SELECT * FROM `{prefix}_tickets` WHERE ticket_id={ticket_id}")
+    cur.execute(f"SELECT ticket_id, first_name, last_name, phone_number, preference FROM `tickets` WHERE prefix=\"{prefix}\" AND ticket_id={ticket_id}")
     r = cur.fetchone()
     conn.close()
     if not r:
@@ -43,7 +43,7 @@ def get_range_tickets(request:Request, prefix:str, id_from:int, id_to:int, api_k
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
-    cur.execute(f"SELECT * FROM `{prefix}_tickets` WHERE ticket_id BETWEEN {id_from} AND {id_to}")
+    cur.execute(f"SELECT ticket_id, first_name, last_name, phone_number, preference FROM `tickets` WHERE prefix=\"{prefix}\" AND ticket_id BETWEEN {id_from} AND {id_to}")
     results = cur.fetchall()
     conn.close()
     if not results:
@@ -61,7 +61,7 @@ def get_random_ticket(request:Request, prefix:str, api_key:str=None):
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     conn, cur = session()
-    cur.execute(f"SELECT * FROM `{prefix}_tickets` ORDER BY {rand()} LIMIT 1")
+    cur.execute(f"SELECT ticket_id, first_name, last_name, phone_number, preference FROM `tickets` WHERE prefix=\"{prefix}\" ORDER BY {rand()} LIMIT 1")
     r = cur.fetchone()
     conn.close()
     if not r:
@@ -76,7 +76,7 @@ def post_ticket(request:Request, prefix:str, t:Ticket, api_key:str=None):
         raise HTTPException(status_code=401, detail="Invalid API key.")
     try:
         conn, cur = session()
-        cur.execute(f"REPLACE INTO `{prefix}_tickets` (ticket_id, first_name, last_name, phone_number, preference) VALUES ({t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
+        cur.execute(f"REPLACE INTO `tickets` VALUES (\"{prefix}\", {t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
         conn.commit()
         conn.close()
         return {"success": True, "posted_ticket": f"Prefix: {prefix} Details: {t.ticket_id} {t.first_name} {t.last_name} {t.phone_number} {t.preference}"}
@@ -91,7 +91,7 @@ def post_tickets(request:Request, prefix:str, tickets:list[Ticket], api_key:str=
     try:
         conn, cur = session()
         for t in tickets:
-            cur.execute(f"REPLACE INTO `{prefix}_tickets` (ticket_id, first_name, last_name, phone_number, preference) VALUES ({t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
+            cur.execute(f"REPLACE INTO `tickets` VALUES (\"{prefix}\", {t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
         conn.commit()
         conn.close()
         return {"success": True}
