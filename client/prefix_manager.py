@@ -78,9 +78,30 @@ def prefix_manager(BASE_URL:str=None, api_key:str=None):
     frm_showcase = ttk.LabelFrame(window, text="Showcase")
     frm_showcase.pack(padx=4, pady=4, fill="x")
 
-    for bootstyle in bootstyle_values:
-        btn_style = ttk.Button(frm_showcase, text=f"{bootstyle.capitalize()}", bootstyle=bootstyle)
-        btn_style.pack(side="left", padx=4, pady=4)
+    btn_bootstyle_primary = ttk.Button(frm_showcase, text="Primary", bootstyle="primary", command=lambda: cmb_bootstyle.set("primary"))
+    btn_bootstyle_primary.pack(side="left", padx=4, pady=4)
+
+    btn_bootstyle_secondary = ttk.Button(frm_showcase, text="Secondary", bootstyle="secondary", command=lambda: cmb_bootstyle.set("secondary"))
+    btn_bootstyle_secondary.pack(side="left", padx=4, pady=4)
+
+    btn_bootstyle_success = ttk.Button(frm_showcase, text="Success", bootstyle="success", command=lambda: cmb_bootstyle.set("success"))
+    btn_bootstyle_success.pack(side="left", padx=4, pady=4)
+
+    btn_bootstyle_info = ttk.Button(frm_showcase, text="Info", bootstyle="info", command=lambda: cmb_bootstyle.set("info"))
+    btn_bootstyle_info.pack(side="left", padx=4, pady=4)
+
+    btn_bootstyle_warning = ttk.Button(frm_showcase, text="Warning", bootstyle="warning", command=lambda: cmb_bootstyle.set("warning"))
+    btn_bootstyle_warning.pack(side="left", padx=4, pady=4)
+
+    btn_bootstyle_danger = ttk.Button(frm_showcase, text="Danger", bootstyle="danger", command=lambda: cmb_bootstyle.set("danger"))
+    btn_bootstyle_danger.pack(side="left", padx=4, pady=4)
+
+    btn_bootstyle_light = ttk.Button(frm_showcase, text="Light", bootstyle="light", command=lambda: cmb_bootstyle.set("light"))
+    btn_bootstyle_light.pack(side="left", padx=4, pady=4)
+
+    btn_bootstyle_dark = ttk.Button(frm_showcase, text="Dark", bootstyle="dark", command=lambda: cmb_bootstyle.set("dark"))
+    btn_bootstyle_dark.pack(side="left", padx=4, pady=4)
+
 
     frm_status_bar = ttk.Frame(window)
     frm_status_bar.pack(side="bottom", padx=4, pady=4)
