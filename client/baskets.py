@@ -51,8 +51,8 @@ def basket_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes:
 
     def cmd_save(_=None):
         if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get()]:
-            s_item = {"basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
-            result = post(f"{BASE_URL}basket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False)
+            s_item = {"prefix": prefix, "basket_id": v_id.get(), "description": v_de.get(), "donors": v_do.get(), "winning_ticket": v_wt.get()}
+            result = post(f"{BASE_URL}basket/", json=s_item, params={"api_key": api_key}, verify=False)
             if result.status_code == 200:
                 tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get()))
     

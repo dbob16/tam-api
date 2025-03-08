@@ -37,14 +37,8 @@ def get_random_ticket(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
-    cur.execute(f"SELECT ticket_id, first_name, last_name, phone_number, preference FROM `tickets` WHERE prefix=\"{prefix}\" ORDER BY {rand()} LIMIT 1")
-    r = cur.fetchone()
-    conn.close()
-    if not r:
-        return {}
-    else:
-        return {"ticket_id": r[0], "first_name": r[1], "last_name": r[2], "phone_number": r[3], "preference": r[4]}
+    repo = TicketRepo()
+    return repo.get_random(prefix)
 
 @router.post("/ticket/")
 def post_ticket(request:Request, t:Ticket, api_key:str=None):

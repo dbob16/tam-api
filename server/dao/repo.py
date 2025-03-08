@@ -1,5 +1,5 @@
 from .models import *
-from .db import session, DB_TYPE
+from .db import session, DB_TYPE, rand
 from .exceptions import ItemNotFound
 
 class Repository[I]:
@@ -96,6 +96,17 @@ class TicketRepo(Repository[Ticket]):
             return []
         l = [Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5]) for r in results]
         return l
+    def get_random(self, prefix:str) -> Ticket:
+        conn, cur = session()
+        stmt = f"SELECT * FROM tickets WHERE prefix = ? ORDER BY {rand()} LIMIT 1"
+        data = (prefix,)
+        if DB_TYPE != "LOCAL":
+            stmt = stmt.replace("?", "%s")
+        cur.execute(stmt, data)
+        r = cur.fetchone()
+        if not r:
+            return {}
+        return Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5])
     def add(self, t:Ticket) -> str:
         conn, cur = session()
         stmt_insert = "INSERT INTO tickets (first_name, last_name, phone_number, preference, prefix, ticket_id) VALUES (?, ?, ?, ?, ?, ?)"
@@ -112,3 +123,74 @@ class TicketRepo(Repository[Ticket]):
             conn.commit()
         conn.close()
         return f"Ticket {t.prefix} {t.ticket_id} added/updated successfully"
+    
+class BasketRepo(Repository[Basket]):
+    def get_one(self, prefix:str, id:int) -> Basket:
+        conn, cur = session()
+        stmt = "SELECT * FROM baskets WHERE prefix = ? AND basket_id = ?"
+        data = (prefix, id)
+        if DB_TYPE != "LOCAL":
+            stmt = stmt.replace("?", "%s")
+        cur.execute(stmt, data)
+        r = cur.fetchone()
+        conn.close()
+        if not r:
+            return {}
+        return Basket(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4])
+    def get_range(self, prefix:str, id_from:int, id_to:int) -> list[Basket]:
+        conn, cur = session()
+        stmt = "SELECT * FROM baskets WHERE prefix = ? AND basket_id BETWEEN ? AND ?"
+        data = (prefix, id_from, id_to)
+        if DB_TYPE != "LOCAL":
+            stmt = stmt.replace("?", "%s")
+        cur.execute(stmt, data)
+        results = cur.fetchall()
+        conn.close()
+        if not results:
+            return []
+        l = [Basket(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4]) for r in results]
+        return l
+    def get_all(self, prefix:str) -> list[Basket]:
+        conn, cur = session()
+        stmt = "SELECT * FROM baskets WHERE prefix = ?"
+        data = (prefix,)
+        if DB_TYPE != "LOCAL":
+            stmt = stmt.replace("?", "%s")
+        cur.execute(stmt, data)
+        results = cur.fetchall()
+        conn.close()
+        if not results:
+            return []
+        l = [Basket(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4]) for r in results]
+        return l
+    def add(self, b:Basket) -> str:
+        conn, cur = session()
+        stmt_insert = "INSERT INTO baskets (description, donors, winning_ticket, prefix, basket_id) VALUES (?, ?, ?, ?, ?)"
+        stmt_update = "UPDATE baskets SET description = ?, donors = ?, winning_ticket = ? WHERE prefix = ? AND basket_id = ?"
+        data = (b.description, b.donors, b.winning_ticket, b.prefix, b.basket_id)
+        if DB_TYPE != "LOCAL":
+            stmt_insert = stmt_insert.replace("?", "%s")
+            stmt_update = stmt_update.replace("?", "%s")
+        try:
+            cur.execute(stmt_insert, data)
+            conn.commit()
+        except:
+            cur.execute(stmt_update, data)
+            conn.commit()
+        conn.close()
+        return f"Basket {b.prefix} {b.basket_id} added/updated successfully."
+    def add_winner(self, prefix:str, id: int, ticket_id:int):
+        conn, cur = session()
+        stmt_insert = "INSERT INTO baskets (winning_ticket, prefix, basket_id) VALUES (?, ?, ?)"
+        stmt_update = "UPDATE baskets SET winning_ticket = ? WHERE prefix = ? AND basket_id = ?"
+        data = (ticket_id, prefix, id)
+        if DB_TYPE != "LOCAL":
+            stmt_insert = stmt_insert.replace("?", "%s")
+            stmt_update = stmt_update.replace("?", "%s")
+        try:
+            cur.execute(stmt_insert, data)
+            conn.commit()
+        except:
+            cur.execute(stmt_update, data)
+            conn.commit()
+        return f"Winner updated for Basket {prefix} {id} successfully."

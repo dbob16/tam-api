@@ -42,10 +42,10 @@ def restore(BASE_URL:str, api_key:str, restore_file:str):
         response = post(f"{BASE_URL}prefix/", params={"api_key": api_key}, json=prefix)
         if response.status_code != 200:
             return response.json()
-        response = post(f"{BASE_URL}tickets/{prefix['prefix']}/", params={"api_key": api_key}, json=in_dict[f"{prefix['prefix']}_tickets"])
+        response = post(f"{BASE_URL}tickets/", params={"api_key": api_key}, json=in_dict[f"{prefix['prefix']}_tickets"])
         if response.status_code != 200:
             return response.json()
-        response = post(f"{BASE_URL}baskets/{prefix['prefix']}/", params={"api_key": api_key}, json=in_dict[f"{prefix['prefix']}_baskets"])
+        response = post(f"{BASE_URL}baskets/", params={"api_key": api_key}, json=in_dict[f"{prefix['prefix']}_baskets"])
         if response.status_code != 200:
             return response.json()
     if os.name == "nt":

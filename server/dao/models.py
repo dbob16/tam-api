@@ -20,6 +20,11 @@ class Basket(BaseModel):
     donors:str
     winning_ticket:int
 
+class BasketAddWinner(BaseModel):
+    prefix:str
+    basket_id:int
+    winning_ticket:int
+
 class Counts(BaseModel):
     prefix:str
     total:int

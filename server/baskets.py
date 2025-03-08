@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException
 from db import *
-from models import Basket
+from dao import Basket, BasketRepo, BasketAddWinner
 
 router = APIRouter()
 
@@ -9,77 +9,46 @@ def get_all_baskets(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
-    cur.execute(f"SELECT basket_id, description, donors, winning_ticket FROM `baskets` WHERE prefix=\"{prefix}\" ORDER BY basket_id")
-    results = cur.fetchall()
-    conn.close()
-    if not results:
-        return []
-    else:
-        r_l = []
-        for r in results:
-            r_d = {"basket_id": r[0], "description": r[1], "donors": r[2], "winning_ticket": r[3]}
-            r_l.append(r_d)
-        return r_l
+    repo = BasketRepo()
+    return repo.get_all(prefix)
 
 @router.get("/baskets/{prefix}/{basket_id}/")
 def get_single_basket(request:Request, prefix:str, basket_id:int, api_key:str=None):
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
-    cur.execute(f"SELECT basket_id, description, donors, winning_ticket FROM `baskets` WHERE prefix = \"{prefix}\" AND basket_id = {basket_id}")
-    r = cur.fetchone()
-    conn.close()
-    if not r:
-        return {}
-    else:
-        r_d = {"basket_id": r[0], "description": r[1], "donors": r[2], "winning_ticket": r[3]}
-        return r_d
+    repo = BasketRepo()
+    return repo.get_one(prefix, basket_id)
 
 @router.get("/baskets/{prefix}/{id_from}/{id_to}/")
 def get_range_baskets(request:Request, prefix:str, id_from:int, id_to:int, api_key:str=None):
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
-    cur.execute(f"SELECT basket_id, description, donors, winning_ticket FROM `baskets` WHERE prefix = \"{prefix}\" AND basket_id BETWEEN {id_from} AND {id_to} ORDER BY basket_id")
-    results = cur.fetchall()
-    conn.close()
-    if not results:
-        return []
-    else:
-        r_l = []
-        for r in results:
-            r_d = {"basket_id": r[0], "description": r[1], "donors": r[2], "winning_ticket": r[3]}
-            r_l.append(r_d)
-        return r_l
+    repo = BasketRepo()
+    return repo.get_range(prefix, id_from, id_to)
 
-@router.post("/basket/{prefix}/")
-def post_basket(request:Request, prefix:str, b:Basket, api_key:str=None):
-    prefix = prefix.lower()
+@router.post("/basket/")
+def post_basket(request:Request, b:Basket, api_key:str=None):
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    try:
-        conn, cur = session()
-        cur.execute(f"REPLACE INTO `baskets` VALUES (\"{prefix}\", {b.basket_id}, \"{b.description}\", \"{b.donors}\", {b.winning_ticket})")
-        conn.commit()
-        conn.close()
-        return {"success": True, "posted_basket": f"Prefix: {prefix} Details: {b.basket_id} {b.description} {b.donors} {b.winning_ticket}"}
-    except Exception as e:
-        return {"success": False, "exception": e}
+    repo = BasketRepo()
+    message = repo.add(b)
+    return {"success": True, "message": message}
 
-@router.post("/baskets/{prefix}/")
-def post_basket(request:Request, prefix:str, baskets:list[Basket], api_key:str=None):
-    prefix = prefix.lower()
+@router.post("/baskets/")
+def post_basket(request:Request, baskets:list[Basket], api_key:str=None):
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    try:
-        conn, cur = session()
-        for b in baskets:
-            cur.execute(f"REPLACE INTO `baskets` VALUES (\"{prefix}\", {b.basket_id}, \"{b.description}\", \"{b.donors}\", {b.winning_ticket})")
-        conn.commit()
-        conn.close()
-        return {"success": True}
-    except Exception as e:
-        return HTTPException(status_code=500, detail={"success": False, "exception": e})
+    repo = BasketRepo()
+    for b in baskets:
+        repo.add(b)
+    return {"success": True, "message": "Batch of baskets added successfully"}
+
+@router.post("/basket/winner/")
+def post_basket(request:Request, b:BasketAddWinner, api_key:str=None):
+    if API_PW and not check_api_key(api_key, request):
+        raise HTTPException(status_code=401, detail="Invalid API key.")
+    repo = BasketRepo()
+    message = repo.add_winner(b.prefix, b.basket_id, b.winning_ticket)
+    return {"success": True, "message": message}

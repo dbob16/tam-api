@@ -4,6 +4,12 @@ from mysql.connector import connect as m_connect
 
 DB_TYPE = os.getenv("DB_TYPE", "LOCAL")
 
+def rand():
+    if DB_TYPE == "LOCAL":
+        return "random()"
+    elif DB_TYPE == "MARIADB":
+        return "rand()"
+
 def session():
     if DB_TYPE == "LOCAL":
         conn = l_connect("data.db")
