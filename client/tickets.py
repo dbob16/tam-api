@@ -72,8 +72,8 @@ def ticket_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes:
 
     def cmd_save(_=None):
         if tview.item(v_id.get())["values"] != [v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()]:
-            s_item = {"ticket_id": v_id.get(), "first_name": v_fn.get(), "last_name": v_ln.get(), "phone_number": v_pn.get(), "preference": v_pref.get()}
-            response = post(f"{BASE_URL}ticket/{prefix.lower()}/", json=s_item, params={"api_key": api_key}, verify=False)
+            s_item = {"prefix": prefix, "ticket_id": v_id.get(), "first_name": v_fn.get(), "last_name": v_ln.get(), "phone_number": v_pn.get(), "preference": v_pref.get()}
+            response = post(f"{BASE_URL}ticket/", json=s_item, params={"api_key": api_key}, verify=False)
             if response.status_code == 200:
                 tview.item(v_id.get(), values=[v_id.get(), v_fn.get(), v_ln.get(), v_pn.get(), v_pref.get()])
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException
+from typing import List
 from db import *
-from models import Ticket
+from dao import Ticket, TicketRepo
 
 router = APIRouter()
 
@@ -9,51 +10,27 @@ def get_all_tickets(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
-    cur.execute(f"SELECT ticket_id, first_name, last_name, phone_number, preference FROM `tickets` WHERE prefix=\"{prefix}\" ORDER BY ticket_id")
-    results = cur.fetchall()
-    conn.close()
-    if not results:
-        return []
-    else:
-        r_l = []
-        for r in results:
-            r_d = {"ticket_id": r[0], "first_name": r[1], "last_name": r[2], "phone_number": r[3], "preference": r[4]}
-            r_l.append(r_d)
-        return r_l
+    repo = TicketRepo()
+    results = repo.get_all(prefix)
+    return results
 
 @router.get("/tickets/{prefix}/{ticket_id}/")
 def get_single_ticket(request:Request, prefix:str, ticket_id:int, api_key:str=None):
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
-    cur.execute(f"SELECT ticket_id, first_name, last_name, phone_number, preference FROM `tickets` WHERE prefix=\"{prefix}\" AND ticket_id={ticket_id}")
-    r = cur.fetchone()
-    conn.close()
-    if not r:
-        return {}
-    else:
-        r_d = {"ticket_id": r[0], "first_name": r[1], "last_name": r[2], "phone_number": r[3], "preference": r[4]}
-        return r_d
+    repo = TicketRepo()
+    results = repo.get_one(prefix, ticket_id)
+    return results
 
 @router.get("/tickets/{prefix}/{id_from}/{id_to}/")
 def get_range_tickets(request:Request, prefix:str, id_from:int, id_to:int, api_key:str=None):
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
-    cur.execute(f"SELECT ticket_id, first_name, last_name, phone_number, preference FROM `tickets` WHERE prefix=\"{prefix}\" AND ticket_id BETWEEN {id_from} AND {id_to}")
-    results = cur.fetchall()
-    conn.close()
-    if not results:
-        return []
-    else:
-        r_l = []
-        for r in results:
-            r_d = {"ticket_id": r[0], "first_name": r[1], "last_name": r[2], "phone_number": r[3], "preference": r[4]}
-            r_l.append(r_d)
-        return r_l
+    repo = TicketRepo()
+    results = repo.get_range(prefix, id_from, id_to)
+    return results
 
 @router.get("/random/tickets/{prefix}/")
 def get_random_ticket(request:Request, prefix:str, api_key:str=None):
@@ -69,31 +46,25 @@ def get_random_ticket(request:Request, prefix:str, api_key:str=None):
     else:
         return {"ticket_id": r[0], "first_name": r[1], "last_name": r[2], "phone_number": r[3], "preference": r[4]}
 
-@router.post("/ticket/{prefix}/")
-def post_ticket(request:Request, prefix:str, t:Ticket, api_key:str=None):
-    prefix = prefix.lower()
+@router.post("/ticket/")
+def post_ticket(request:Request, t:Ticket, api_key:str=None):
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
+    repo = TicketRepo()
     try:
-        conn, cur = session()
-        cur.execute(f"REPLACE INTO `tickets` VALUES (\"{prefix}\", {t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
-        conn.commit()
-        conn.close()
-        return {"success": True, "posted_ticket": f"Prefix: {prefix} Details: {t.ticket_id} {t.first_name} {t.last_name} {t.phone_number} {t.preference}"}
-    except Exception as e:
-        return {"success": False, "exception": e}
+        result = repo.add(t)
+        return {"success": True, "message": result}
+    except:
+        raise HTTPException(status_code=500, detail="Something went wrong, check server logs")
 
-@router.post("/tickets/{prefix}/")
-def post_tickets(request:Request, prefix:str, tickets:list[Ticket], api_key:str=None):
-    prefix = prefix.lower()
+@router.post("/tickets/")
+def post_tickets(request:Request, tickets:list[Ticket], api_key:str=None):
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
+    repo = TicketRepo()
     try:
-        conn, cur = session()
         for t in tickets:
-            cur.execute(f"REPLACE INTO `tickets` VALUES (\"{prefix}\", {t.ticket_id}, \"{t.first_name}\", \"{t.last_name}\", \"{t.phone_number}\", \"{t.preference}\")")
-        conn.commit()
-        conn.close()
-        return {"success": True}
-    except Exception as e:
-        return HTTPException(status_code=500, detail={"success": False, "exception": e})
+            repo.add(t)
+        return {"success": True, "message": "Batch of tickets added/updated successfully."}
+    except:
+        raise HTTPException(status_code=500, detail="Something went wrong, check server logs")

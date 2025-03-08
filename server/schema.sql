@@ -22,6 +22,21 @@ winning_ticket INT,
 PRIMARY KEY (prefix, basket_id)
 );
 
+CREATE VIEW IF NOT EXISTS ticket_counts AS
+SELECT prefix, COUNT(*) AS total_buys, COUNT(DISTINCT CONCAT(first_name, last_name, phone_number)) AS unique_buys
+FROM tickets
+GROUP BY prefix
+UNION ALL
+SELECT "totals", COUNT(*) AS total_buys, COUNT(DISTINCT CONCAT(first_name, last_name, phone_number)) AS unique_buys
+FROM tickets;
+
+CREATE VIEW IF NOT EXISTS basket_winners AS
+SELECT b.*, CONCAT(t.last_name, ", ", t.first_name) AS winner_name, t.phone_number, t.preference
+FROM baskets AS b
+JOIN tickets AS t
+ON b.prefix = t.prefix AND b.winning_ticket = t.ticket_id
+ORDER BY b.prefix, b.basket_id;
+
 CREATE TABLE IF NOT EXISTS api_keys (
 api_key VARCHAR(255) PRIMARY KEY,
 pc_name VARCHAR(255),

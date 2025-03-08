@@ -19,7 +19,8 @@ while True:
     try:
         db_init()
         break
-    except:
+    except Exception as e:
+        print(e)
         print("DB Connection Failed. Trying again in 3 seconds")
         time.sleep(3)
 
