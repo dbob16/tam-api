@@ -6,6 +6,8 @@ from httpx import get, post
 from dao import *
 from configparser import ConfigParser
 from ttkbootstrap import utility
+from tkinter import filedialog
+from jinja2 import Environment, FileSystemLoader
 from forms import ticket_form, basket_form, drawing_form
 from prefix_manager import prefix_manager
 from api_cleaner import api_cleaner
@@ -71,13 +73,17 @@ def main():
     real_path = os.path.realpath(__file__)
     if os.name == "nt":
         icon_path = os.path.join(real_path.rsplit("\\", maxsplit=1)[0], "icon.png")
+        template_dir = os.path.join(real_path.rsplit("\\", maxsplit=1)[0], "templates")
     else:
         icon_path = os.path.join(real_path.rsplit("/", maxsplit=1)[0], "icon.png")
+        template_dir = os.path.join(real_path.rsplit("/", maxsplit=1)[0], "templates")
     if HIGH_DPI == "on" and os.name == "nt":
         global font_size
         global high_dpi_obj
         font_size = 12
         high_dpi_obj = utility.enable_high_dpi_awareness(scaling=1.75)
+    # j2_env = Environment(FileSystemLoader(template_dir))
+    # report_template = j2_env.get_template("report.html")
     window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs['theme'], iconphoto=icon_path)
     v_status = ttk.StringVar(window)
     style = ttk.Style()

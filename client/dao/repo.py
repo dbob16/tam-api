@@ -136,6 +136,23 @@ class TicketRepo(Repository):
         results = self.cur.fetchall()
         l_r = [Ticket(*r) for r in results]
         return l_r
+    def get_random(self, prefix:str):
+        if len(self.BASE_URL) > 0:
+            response = httpx.get(f"{self.BASE_URL}random/tickets/{prefix}/", params=self.params, verify=False)
+            if response.status_code == 200:
+                body = response.json()
+            if body:
+                r_r = [Ticket(**r) for r in body]
+                return r_r
+        self.create_table()
+        stmt = "SELECT * FROM tickets WHERE prefix = ? ORDER BY random() LIMIT 1"
+        data = (prefix,)
+        self.cur.execute(stmt, data)
+        result = self.cur.fetchone()
+        if not result:
+            return Ticket(prefix, 0)
+        l_r = Ticket(*result)
+        return l_r
     def get_all_prefixes(self):
         if len(self.BASE_URL) > 0:
             response = httpx.get(f"{self.BASE_URL}tickets/", params=self.params, verify=False)
@@ -177,7 +194,13 @@ class TicketRepo(Repository):
 
 class BasketRepo(Repository):
     def create_table(self):
-        self.cur.execute("CREATE TABLE IF NOT EXISTS baskets (prefix TEXT, basket_id INTEGER, description TEXT, donors TEXT, winning_ticket INTEGER, PRIMARY KEY (prefix, basket_id))")
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS baskets (
+        prefix TEXT,
+        basket_id INTEGER,
+        description TEXT,
+        donors TEXT,
+        winning_ticket INTEGER,
+        PRIMARY KEY (prefix, basket_id))""")
         self.conn.commit()
     def get_one(self, prefix:str, basket_id:int):
         if len(self.BASE_URL) > 0:
@@ -245,6 +268,7 @@ class BasketRepo(Repository):
         stmt = "REPLACE INTO baskets VALUES (?, ?, ?, ?, ?)"
         data = (b.prefix, b.basket_id, b.description, b.donors, b.winning_ticket)
         self.cur.execute(stmt, data)
+        self.conn.commit()
         if len(self.BASE_URL) > 0:
             httpx.post(f"{BASE_URL}basket/", json=b, params=self.params, verify=False)
     def add_list(self, l:list[Basket]):
@@ -268,3 +292,76 @@ class BasketRepo(Repository):
         l_r = [Basket(*r) for r in results]
         if len(self.BASE_URL) > 0:
             httpx.post(f"{self.BASE_URL}baskets/", json=l_r, params=self.params, verify=False)
+
+class WinnerRepo(Repository):
+    def create_view(self):
+        self.cur.execute("""CREATE VIEW IF NOT EXISTS basket_winners AS
+        SELECT b.*, CONCAT(t.last_name, ", ", t.first_name) AS winner_name, t.phone_number, t.preference
+        FROM baskets AS b
+        LEFT JOIN tickets AS t
+        ON b.prefix = t.prefix AND b.winning_ticket = t.ticket_id
+        ORDER BY b.prefix, b.basket_id""")
+        self.conn.commit()
+    def get_basket_one(self, prefix:str, basket_id:int):
+        if len(self.BASE_URL) > 0:
+            response = httpx.get(f"{self.BASE_URL}combined/{prefix}/{basket_id}/", params=self.params, verify=False)
+            if response.status_code == 200:
+                body = response.json()
+            if body:
+                r_r = BasketWinner(**body)
+                return r_r
+        self.create_view()
+        stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND basket_id = ?"
+        data = (prefix, basket_id)
+        self.cur.execute(stmt, data)
+        results = self.cur.fetchone()
+        if not results:
+            return BasketWinner(prefix, basket_id)
+        l_r = BasketWinner(*results)
+        return l_r
+    def get_basket_range(self, prefix:str, id_from:int, id_to:int):
+        if len(self.BASE_URL) > 0:
+            response = httpx.get(f"{self.BASE_URL}combined/{prefix}/{id_from}/{id_to}/", params=self.params, verify=False)
+            if response.status_code == 200:
+                body = response.json()
+            if body:
+                r_r = [BasketWinner(**r) for r in body]
+                return r_r
+        self.create_view()
+        stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND basket_id BETWEEN ? AND ?"
+        data = (prefix, id_from, id_to)
+        self.cur.execute(stmt, data)
+        results = self.cur.fetchall()
+        l_r = [BasketWinner(*r) for r in results]
+        return l_r
+    def get_all(self, prefix:str):
+        if len(self.BASE_URL) > 0:
+            response = httpx.get(f"{self.BASE_URL}combined/{prefix}/", params=self.params, verify=False)
+            if response.status_code == 200:
+                body = response.json()
+            if body:
+                r_r = [BasketWinner(**r) for r in body]
+                return r_r
+        self.create_view()
+        stmt = "SELECT * FROM basket_winners WHERE prefix = ?"
+        data = (prefix,)
+        self.cur.execute(stmt, data)
+        results = self.cur.fetchall()
+        l_r = [BasketWinner(*r) for r in results]
+        return l_r
+    def report_byname(self, prefix:str, preference:str="%"):
+        self.create_view()
+        stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND preference = ? ORDER BY winner_name, phone_number, winning_ticket"
+        data = (prefix, preference)
+        self.cur.execute(stmt, data)
+        results = self.cur.fetchall()
+        l_r = [BasketWinner(*r) for r in results]
+        return l_r
+    def report_bybasket(self, prefix:str, preference:str="%"):
+        self.create_view()
+        stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND preference = ?"
+        data = (prefix, preference)
+        self.cur.execute(stmt, data)
+        results = self.cur.fetchall()
+        l_r = [BasketWinner(*r) for r in results]
+        return l_r

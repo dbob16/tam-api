@@ -24,7 +24,11 @@ def report_byname(request:Request, prefix:str, filter:str=None, api_key:str=None
         results = repo.get_all_byname(prefix, "TEXT")
     results = [(r.winner_name, r.phone_number, r.basket_id, r.winning_ticket, r.description) for r in results]
     headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
-    return templates.TemplateResponse(request=request, name="byname.html", context={"prefix": prefix.capitalize(), "title": select_title, "headers": headers, "records": results})
+    return templates.TemplateResponse(request=request, name="report.html", context={
+        "maintitle": f"{prefix.capitalize()} Basket Winners by Name",
+        "title": select_title,
+        "headers": headers,
+        "records": results})
 
 @router.get("/reports/bybasket/{prefix}/", response_class=HTMLResponse)
 def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=None):
@@ -43,7 +47,11 @@ def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=No
         results = repo.get_all(prefix, "TEXT")
     results = [(r.basket_id, r.description, r.winning_ticket, r.winner_name, r.phone_number) for r in results]
     headers = ("Basket #", "Basket Description", "Ticket #", "Winner Name", "Phone Number")
-    return templates.TemplateResponse(request=request, name="bybasket.html", context={"prefix": prefix.capitalize(), "title": select_title, "headers": headers, "records": results})
+    return templates.TemplateResponse(request=request, name="report.html", context={
+        "maintitle": f"{prefix.capitalize} Basket Winners by Basket #",
+        "title": select_title,
+        "headers": headers,
+        "records": results})
 
 @router.get("/reports/counts/", response_class=HTMLResponse)
 def get_counts(request:Request, api_key:str=None):
@@ -53,4 +61,8 @@ def get_counts(request:Request, api_key:str=None):
     results = repo.get_counts()
     results = [(r.prefix, r.total, r.unique) for r in results]
     headers = ("Prefix", "All Ticket Lines", "Unique Buyers")
-    return templates.TemplateResponse(request=request, name="counts.html", context={"headers": headers, "records": results})
+    return templates.TemplateResponse(request=request, name="report.html", context={
+        "maintitle": "Ticket Counts",
+        "title": "Lists ticket counts",
+        "headers": headers,
+        "records": results})

@@ -1,5 +1,5 @@
 import ttkbootstrap as ttk
-from httpx import get, post
+from dao import BasketRepo, Basket, WinnerRepo, BasketWinner, TicketRepo, Ticket
 
 def drawing_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes:dict):
     prefix = prefix.lower()
@@ -30,18 +30,11 @@ def drawing_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes
                 tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"), tags=("oddrow",))
             else:
                 tview.insert("", "end", iid=i, values=(i, "", "", 0, "No Winner"))
-        response = get(f"{BASE_URL}baskets/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
-        if response.status_code == 200:
-            results = response.json()
-            if results:
-                for r in results:
-                    tview.item(r["basket_id"], values=(r["basket_id"], r["description"], r["donors"], r["winning_ticket"], "No Winner"))
-        c_response = get(f"{BASE_URL}combined/{prefix.lower()}/{v_from.get()}/{v_to.get()}/", params={"api_key": api_key}, verify=False)
-        if c_response.status_code == 200:
-            c_results = c_response.json()
-            if c_results:
-                for r in c_results:
-                    tview.set(r["basket_id"], "wi", r["winner_name"])
+        repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
+        results = repo.get_basket_range(prefix, v_from.get(), v_to.get())
+        if results:
+            for r in results:
+                tview.item(r.basket_id, values=[r.basket_id, r.description, r.donors, r.winning_ticket, r.winner_name])
         v_id.set(v_from.get())
         tview.selection_set(v_id.get())
         tview.see(tview.selection())
@@ -59,15 +52,11 @@ def drawing_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes
 
     def cmd_save(_=None):
         if tview.item(v_id.get())["values"] != [v_id.get(), v_de.get(), v_do.get(), v_wt.get(), v_wn.get()]:
-            s_item = {"prefix": prefix, "basket_id": v_id.get(), "winning_ticket": v_wt.get()}
-            response = post(f"{BASE_URL}basket/winner/", json=s_item, params={"api_key": api_key}, verify=False)
-            if response.status_code == 200:
-                tview.item(v_id.get(), values=(v_id.get(), v_de.get(), v_do.get(), v_wt.get(), "No Winner"))
-                c_response = get(f"{BASE_URL}combined/{prefix.lower()}/{v_id.get()}/", params={"api_key": api_key}, verify=False)
-                if c_response.status_code == 200:
-                    c_result = c_response.json()
-                    if c_result:
-                        tview.set(v_id.get(), "wi", c_result["winner_name"])
+            repo = BasketRepo(BASE_URL=BASE_URL, api_key=api_key)
+            repo.update_winner(prefix, v_id.get(), v_wt.get())
+            repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
+            w = repo.get_basket_one(prefix, v_id.get())
+            tview.item(w.basket_id, values=[w.basket_id, w.description, w.donors, w.winning_ticket, w.winner_name])
 
     def cmd_cancel(_=None):
         r = tview.item(v_id.get())["values"]
@@ -113,9 +102,10 @@ def drawing_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes
         cmd_paste()
 
     def cmd_random(_=None):
+        repo = TicketRepo(BASE_URL=BASE_URL, api_key=api_key)
         try:
-            result = get(f"{BASE_URL}random/tickets/{prefix}/", params={"api_key": api_key}, verify=False).json()
-            v_wt.set(result["ticket_id"])
+            t = repo.get_random(prefix)
+            v_wt.set(t.ticket_id)
         except:
             pass
 
