@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException
-from db import *
-from dao import Prefix, PrefixRepo
+from dao import *
 
 router = APIRouter()
 

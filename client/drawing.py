@@ -41,7 +41,7 @@ def drawing_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes
             c_results = c_response.json()
             if c_results:
                 for r in c_results:
-                    tview.set(r["basket_id"], "wi", f"{r["last_name"]}, {r["first_name"]}")
+                    tview.set(r["basket_id"], "wi", r["winner_name"])
         v_id.set(v_from.get())
         tview.selection_set(v_id.get())
         tview.see(tview.selection())
@@ -67,7 +67,7 @@ def drawing_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes
                 if c_response.status_code == 200:
                     c_result = c_response.json()
                     if c_result:
-                        tview.set(v_id.get(), "wi", f"{c_result["last_name"]}, {c_result["first_name"]}")
+                        tview.set(v_id.get(), "wi", c_result["winner_name"])
 
     def cmd_cancel(_=None):
         r = tview.item(v_id.get())["values"]

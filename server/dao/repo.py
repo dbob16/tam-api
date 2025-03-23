@@ -194,3 +194,77 @@ class BasketRepo(Repository[Basket]):
             cur.execute(stmt_update, data)
             conn.commit()
         return f"Winner updated for Basket {prefix} {id} successfully."
+
+class WinnerRepo(Repository[BasketWinner]):
+    def get_basket_one(self, prefix:str, id:int) -> BasketWinner:
+        conn, cur = session()
+        stmt = "SELECT * from basket_winners WHERE prefix = ? AND basket_id = ?"
+        data = (prefix, id)
+        if DB_TYPE != "LOCAL":
+            stmt = stmt.replace("?", "%s")
+        cur.execute(stmt, data)
+        r = cur.fetchone()
+        if not r:
+            return {}
+        return BasketWinner(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4],
+        winner_name=r[5], phone_number=r[6], preference=r[7])
+    def get_basket_range(self, prefix:str, id_from:int, id_to:int) -> list[BasketWinner]:
+        conn, cur = session()
+        stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND basket_id BETWEEN ? AND ?"
+        data = (prefix, id_from, id_to)
+        if DB_TYPE != "LOCAL":
+            stmt = stmt.replace("?", "%s")
+        cur.execute(stmt, data)
+        results = cur.fetchall()
+        conn.close()
+        if not results:
+            return []
+        l = [BasketWinner(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4],
+        winner_name=r[5], phone_number=r[6], preference=r[7]) for r in results]
+        return l
+    def get_all(self, prefix:str, preference:str=None) -> list[BasketWinner]:
+        conn, cur = session()
+        stmt = "SELECT * FROM basket_winners WHERE prefix = ?"
+        data = [prefix]
+        if preference:
+            stmt += " AND preference = ?"
+            data.append(preference)
+        if DB_TYPE != "LOCAL":
+            stmt = stmt.replace("?", "%s")
+        cur.execute(stmt, tuple(data))
+        results = cur.fetchall()
+        conn.close()
+        if not results:
+            return []
+        l = [BasketWinner(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4],
+        winner_name=r[5], phone_number=r[6], preference=r[7]) for r in results]
+        return l
+    def get_all_byname(self, prefix:str, preference:str=None) -> list[BasketWinner]:
+        conn, cur = session()
+        stmt = "SELECT * FROM basket_winners WHERE prefix = ?"
+        data = [prefix]
+        if preference:
+            stmt += " AND preference = ?"
+            data.append(preference)
+        if DB_TYPE != "LOCAL":
+            stmt = stmt.replace("?", "%s")
+        stmt += " ORDER BY winner_name, phone_number, winning_ticket"
+        cur.execute(stmt, tuple(data))
+        results = cur.fetchall()
+        conn.close()
+        if not results:
+            return []
+        l = [BasketWinner(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4],
+        winner_name=r[5], phone_number=r[6], preference=r[7]) for r in results]
+        return l
+
+class CountsRepo(Repository[Counts]):
+    def get_counts(self) -> list[Counts]:
+        conn, cur = session()
+        stmt = "SELECT * FROM ticket_counts"
+        cur.execute(stmt)
+        results = cur.fetchall()
+        if not results:
+            return []
+        l = [Counts(prefix=r[0].capitalize(), total=r[1], unique=r[2]) for r in results]
+        return l

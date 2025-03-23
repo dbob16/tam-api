@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException
-from db import *
-from dao import Basket, BasketRepo, BasketAddWinner
+from dao import *
 
 router = APIRouter()
 

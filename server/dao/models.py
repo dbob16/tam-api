@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Prefix(BaseModel):
     prefix:str
@@ -8,17 +8,17 @@ class Prefix(BaseModel):
 class Ticket(BaseModel):
     prefix:str
     ticket_id:int
-    first_name:str
-    last_name:str
-    phone_number:str
-    preference:str
+    first_name:str | None
+    last_name:str | None
+    phone_number:str | None
+    preference:str | None
 
 class Basket(BaseModel):
     prefix:str
     basket_id:int
-    description:str
-    donors:str
-    winning_ticket:int
+    description:str | None
+    donors:str | None
+    winning_ticket:int | None
 
 class BasketAddWinner(BaseModel):
     prefix:str
@@ -33,12 +33,12 @@ class Counts(BaseModel):
 class BasketWinner(BaseModel):
     prefix:str
     basket_id:int
-    description:str
-    donors:str
-    winning_ticket:int
-    winner_name:str
-    phone_number:str
-    preference:str
+    description:str | None
+    donors:str | None
+    winning_ticket:int | None
+    winner_name:str | None
+    phone_number:str | None
+    preference:str | None
 
 class ApiKey(BaseModel):
     api_key:str

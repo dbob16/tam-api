@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException
 from typing import List
-from db import *
-from dao import Ticket, TicketRepo
+from dao import *
 
 router = APIRouter()
 

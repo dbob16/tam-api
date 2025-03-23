@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from db import *
+from dao import *
 
 templates = Jinja2Templates(directory="templates")
 
@@ -12,22 +12,17 @@ def report_byname(request:Request, prefix:str, filter:str=None, api_key:str=None
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
+    repo = WinnerRepo()
     if filter == None:
         select_title = "Winners - All Preferences"
-        filter_line = f"WHERE b.prefix = \"{prefix}\""
+        results = repo.get_all_byname(prefix)
     elif filter == "call":
         select_title = "Winners Preferring Calls"
-        filter_line = f"WHERE b.prefix = \"{prefix}\" AND t.preference = \"CALL\""
+        results = repo.get_all_byname(prefix, "CALL")
     elif filter == "text":
         select_title = "Winners Preferring Texts"
-        filter_line = f"WHERE b.prefix = \"{prefix}\"t.preference = \"TEXT\""
-    cur.execute(f"""SELECT CONCAT(t.last_name, \", \", t.first_name) as last_first, t.phone_number, b.basket_id, b.winning_ticket, b.description
-    FROM `baskets` b INNER JOIN `tickets` t ON b.prefix = t.prefix AND b.winning_ticket = t.ticket_id
-    {filter_line}
-    ORDER BY last_first, t.phone_number, b.basket_id""")
-    results = cur.fetchall()
-    conn.close()
+        results = repo.get_all_byname(prefix, "TEXT")
+    results = [(r.winner_name, r.phone_number, r.basket_id, r.winning_ticket, r.description) for r in results]
     headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
     return templates.TemplateResponse(request=request, name="byname.html", context={"prefix": prefix.capitalize(), "title": select_title, "headers": headers, "records": results})
 
@@ -36,22 +31,17 @@ def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=No
     prefix = prefix.lower()
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API key.")
-    conn, cur = session()
+    repo = WinnerRepo()
     if filter == None:
         select_title = "Winners - All Preferences"
-        filter_line = f"WHERE b.prefix = \"{prefix}\""
+        results = repo.get_all(prefix)
     elif filter == "call":
         select_title = "Winners Preferring Calls"
-        filter_line = f"WHERE b.prefix = \"{prefix}\" AND t.preference = \"CALL\""
+        results = repo.get_all(prefix, "CALL")
     elif filter == "text":
         select_title = "Winners Preferring Texts"
-        filter_line = f"WHERE b.prefix = \"{prefix}\" AND t.preference = \"TEXT\""
-    cur.execute(f"""SELECT b.basket_id, b.description, b.winning_ticket, CONCAT(t.last_name, \", \", t.first_name) AS last_first, t.phone_number
-    FROM `baskets` b INNER JOIN `tickets` t ON b.prefix = t.prefix AND b.winning_ticket = t.ticket_id
-    {filter_line}
-    ORDER BY b.basket_id""")
-    results = cur.fetchall()
-    conn.close()
+        results = repo.get_all(prefix, "TEXT")
+    results = [(r.basket_id, r.description, r.winning_ticket, r.winner_name, r.phone_number) for r in results]
     headers = ("Basket #", "Basket Description", "Ticket #", "Winner Name", "Phone Number")
     return templates.TemplateResponse(request=request, name="bybasket.html", context={"prefix": prefix.capitalize(), "title": select_title, "headers": headers, "records": results})
 
@@ -59,12 +49,8 @@ def report_bybasket(request:Request, prefix:str, filter:str=None, api_key:str=No
 def get_counts(request:Request, api_key:str=None):
     if API_PW and not check_api_key(api_key, request):
         raise HTTPException(status_code=401, detail="Invalid API Key")
-    conn, cur = session()
-    stmt = "SELECT * FROM ticket_counts"
-    cur.execute(stmt)
-    results = cur.fetchall()
-    if results:
-        results = [[r[0].capitalize(), r[1], r[2]] for r in results]
-    conn.close()
+    repo = CountsRepo()
+    results = repo.get_counts()
+    results = [(r.prefix, r.total, r.unique) for r in results]
     headers = ("Prefix", "All Ticket Lines", "Unique Buyers")
     return templates.TemplateResponse(request=request, name="counts.html", context={"headers": headers, "records": results})
