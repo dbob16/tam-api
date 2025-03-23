@@ -3,6 +3,13 @@ from dao import *
 
 router = APIRouter()
 
+@router.get("/baskets/")
+def get_all_basket_prefixes(request:Request, api_key:str=None):
+    if API_PW and not check_api_key(api_key, request):
+        raise HTTPException(status_code=401, detail="Invalid API key.")
+    repo = BasketRepo()
+    return repo.get_all_prefixes()
+
 @router.get("/baskets/{prefix}/")
 def get_all_baskets(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()
@@ -43,11 +50,3 @@ def post_basket(request:Request, baskets:list[Basket], api_key:str=None):
     for b in baskets:
         repo.add(b)
     return {"success": True, "message": "Batch of baskets added successfully"}
-
-@router.post("/basket/winner/")
-def post_basket(request:Request, b:BasketAddWinner, api_key:str=None):
-    if API_PW and not check_api_key(api_key, request):
-        raise HTTPException(status_code=401, detail="Invalid API key.")
-    repo = BasketRepo()
-    message = repo.add_winner(b.prefix, b.basket_id, b.winning_ticket)
-    return {"success": True, "message": message}

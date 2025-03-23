@@ -4,6 +4,14 @@ from dao import *
 
 router = APIRouter()
 
+@router.get("/tickets/")
+def get_all_ticket_prefixes(request:Request, api_key:str=None):
+    if API_PW and not check_api_key(api_key, request):
+        raise HTTPException(status_code=401, detail="Invalid API key.")
+    repo = TicketRepo()
+    results = repo.get_all_prefixes()
+    return results
+
 @router.get("/tickets/{prefix}/")
 def get_all_tickets(request:Request, prefix:str, api_key:str=None):
     prefix = prefix.lower()

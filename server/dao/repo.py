@@ -96,6 +96,15 @@ class TicketRepo(Repository[Ticket]):
             return []
         l = [Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5]) for r in results]
         return l
+    def get_all_prefixes(self) -> list[Ticket]:
+        conn, cur = session()
+        stmt = "SELECT * FROM tickets"
+        cur.execute(stmt)
+        results = cur.fetchall()
+        if not results:
+            return []
+        l = [Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5]) for r in results]
+        return l
     def get_random(self, prefix:str) -> Ticket:
         conn, cur = session()
         stmt = f"SELECT * FROM tickets WHERE prefix = ? ORDER BY {rand()} LIMIT 1"
@@ -162,6 +171,15 @@ class BasketRepo(Repository[Basket]):
         if not results:
             return []
         l = [Basket(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4]) for r in results]
+        return l
+    def get_all_prefixes(self):
+        conn, cur = session()
+        stmt = "SELECT * FROM baskets"
+        cur.execute(stmt)
+        results = cur.fetchall()
+        if not results:
+            return []
+        l = [Basket(*r) for r in results]
         return l
     def add(self, b:Basket) -> str:
         conn, cur = session()

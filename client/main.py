@@ -3,11 +3,10 @@ import ttkbootstrap as ttk
 import webbrowser
 import sys
 from httpx import get, post
+from dao import *
 from configparser import ConfigParser
 from ttkbootstrap import utility
-from tickets import ticket_form
-from baskets import basket_form
-from drawing import drawing_form
+from forms import ticket_form, basket_form, drawing_form
 from prefix_manager import prefix_manager
 from api_cleaner import api_cleaner
 from backup_restore import backup_form, backup, restore, ibackup
@@ -48,7 +47,7 @@ def refresh_config():
         HIGH_DPI = prefs["high_dpi"]
     except:
         config["server"] = {
-            "BASE_URL": "http://localhost:8000/"
+            "BASE_URL": ""
         }
         config["prefs"] = {
             "theme": "cyborg",
@@ -120,18 +119,23 @@ def main():
                 v_status.set(f"Error: HTTP Response <{result.status}>")
                 lbl_status.config(bootstyle="danger")
         except:
-            v_status.set(f"Unable to connect, check conf")
-            lbl_status.config(bootstyle="danger")
+            if len(BASE_URL) == 0:
+                v_status.set("Offline Mode")
+                lbl_status.config(bootstyle="warning")
+            else:
+                v_status.set(f"Unable to connect, check conf")
+                lbl_status.config(bootstyle="danger")
 
     def cmd_get_prefixes():
         l_pr = []
         l_di = {}
         try:
-            response = get(f"{BASE_URL}prefixes/", params={"api_key": api_key}, verify=False)
-            if response.status_code == 200:
-                for r in response.json():
-                    l_pr.append(r["prefix"].capitalize())
-                    l_di[r["prefix"]] = {"bootstyle": r["bootstyle"], "sort_order": r["sort_order"]}
+            repo = PrefixRepo(BASE_URL=BASE_URL, api_key=api_key)
+            results = repo.get_all()
+            if results:
+                for r in results:
+                    l_pr.append(r.prefix.capitalize())
+                    l_di[r.prefix] = {"bootstyle": r.bootstyle, "sort_order": r.sort_order}
                 cmb_prefix.config(values=l_pr)
                 prefixes.clear()
                 prefixes.update(**l_di)

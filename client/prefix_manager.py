@@ -1,7 +1,7 @@
 import os
 import ttkbootstrap as ttk 
 import webbrowser
-from httpx import get, post, delete
+from dao import Prefix, PrefixRepo
 
 bootstyle_values = ("primary", "secondary", "success", "info", "warning", "danger", "light", "dark")
 
@@ -11,16 +11,16 @@ def prefix_manager(BASE_URL:str=None, api_key:str=None):
     d_current = {}
 
     def cmd_get_prefixes():
-        response = get(f"{BASE_URL}prefixes/", params={"api_key": api_key}, verify=False)
-        if response.status_code == 200:
+        repo = PrefixRepo(BASE_URL=BASE_URL, api_key=api_key)
+        results = repo.get_all()
+        if results:
             d_current.clear()
-            r_j = response.json()
-            p_l = [r["prefix"] for r in r_j]
+            p_l = [r.prefix for r in results]
             cmb_prefix.config(values=p_l)
-            for r in r_j:
-                d_current[r["prefix"]] = {"bootstyle": r["bootstyle"], "sort_order": r["sort_order"]}
+            for r in results:
+                d_current[r.prefix] = {"bootstyle": r.bootstyle, "sort_order": r.sort_order}
         else:
-            v_status.set(f"Getting list of prefixes unsuccessful, status code <{response.status_code}>")
+            v_status.set(f"No Results Provided")
             lbl_status.config(bootstyle="danger")
 
     def cmd_cmb_prefix(_=None):
@@ -29,23 +29,18 @@ def prefix_manager(BASE_URL:str=None, api_key:str=None):
         spn_sort_order.set(cr["sort_order"])
 
     def cmd_add_prefix():
-        response = post(f"{BASE_URL}prefix/", json={"prefix": cmb_prefix.get(), "bootstyle": cmb_bootstyle.get(), "sort_order": spn_sort_order.get()}, params={"api_key": api_key}, verify=False)
-        if response.status_code == 200:
-            v_status.set(f"Created prefix {cmb_prefix.get()} successfully")
-            lbl_status.config(bootstyle="success")
-            cmd_get_prefixes()
-        else:
-            v_status.set(f"Prefix creation unsuccessful, status code <{response.status_code}>")
-            lbl_status.config(bootstyle="danger")
+        repo = PrefixRepo(BASE_URL=BASE_URL, api_key=api_key)
+        repo.add_prefix(Prefix(prefix=cmb_prefix.get(), bootstyle=cmb_bootstyle.get(), sort_order=spn_sort_order.get()))
+        v_status.set(f"Created prefix {cmb_prefix.get()} successfully")
+        lbl_status.config(bootstyle="success")
+        cmd_get_prefixes()
 
     def cmd_rm_prefix():
-        response = delete(f"{BASE_URL}delprefix/", params={"api_key": api_key, "prefix": cmb_prefix.get()}, verify=False)
-        if response.status_code == 200:
-            v_status.set(f"Deleted prefix {cmb_prefix.get()} successfully")
-            lbl_status.config(bootstyle="success")
-            cmd_get_prefixes()
-        else:
-            v_status.set(f"Prefix deletion unsuccessful, status code <{response.status_code}>")
+        repo = PrefixRepo(BASE_URL=BASE_URL, api_key=api_key)
+        repo.del_prefix(cmb_prefix.get())
+        v_status.set(f"Deleted prefix {cmb_prefix.get()} successfully")
+        lbl_status.config(bootstyle="success")
+        cmd_get_prefixes()
 
     frm_prefixes = ttk.LabelFrame(window, text="Prefixes")
     frm_prefixes.pack(padx=4, pady=4, fill="x")

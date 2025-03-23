@@ -24,12 +24,6 @@ class Basket:
     winning_ticket:int = 0
 
 @dataclass
-class Counts:
-    prefix:str
-    total:int
-    unique:int
-
-@dataclass
 class BasketWinner:
     prefix:str
     basket_id:int
@@ -39,14 +33,3 @@ class BasketWinner:
     winner_name:str = ""
     phone_number:str = ""
     preference:str = ""
-
-@dataclass
-class ApiKey:
-    api_key:str
-    pc_name:str
-    ip_addr:str = ""
-
-@dataclass
-class ApiRequest:
-    inp_pw:str
-    pc_name:str = ""
