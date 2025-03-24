@@ -27,10 +27,10 @@ services:
       API_PW: ${API_PW}
       SS_MODE: ${SS_MODE}
       DB_TYPE: MYSQL
-      MYSQL_HOST: mariadb
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWD: ${DB_PASSWORD}
-      MYSQL_DB: ${DB_NAME}
+      MARIADB_HOST: mariadb
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
     ports:
       - '127.0.0.1:8000:80'
     healthcheck:

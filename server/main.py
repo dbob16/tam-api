@@ -2,12 +2,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from dao import *
-from api_keys import router as api_router
-from prefixes import router as prefixes_router
-from tickets import router as tickets_router
-from baskets import router as baskets_router
-from combined import router as combined_router
-from reports import router as reports_router
+from routers import *
 import random
 import string
 import dotenv

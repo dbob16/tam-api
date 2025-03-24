@@ -7,6 +7,7 @@ import asyncio
 from httpx import get, post
 from datetime import datetime 
 from tkinter import filedialog
+from dao import PrefixRepo, TicketRepo, BasketRepo
 
 interval_started = False
 
@@ -92,6 +93,22 @@ def backup_form(BASE_URL:str, api_key:str):
         for result in lst_restore_results:
             result.pack(padx=4, pady=4)
 
+    def cmd_push_prefixes(_=None):
+        repo = PrefixRepo(BASE_URL=BASE_URL, api_key=api_key)
+        repo.push()
+    
+    def cmd_push_tickets(_=None):
+        repo = TicketRepo(BASE_URL=BASE_URL, api_key=api_key)
+        repo.push()
+
+    def cmd_push_baskets(_=None):
+        repo = BasketRepo(BASE_URL=BASE_URL, api_key=api_key)
+        repo.push()
+
+    def cmd_pull_prefixes(_=None):
+        repo = PrefixRepo(BASE_URL=BASE_URL, api_key=api_key)
+        repo.pull()
+
     # Label Frames
     frm_backup = ttk.Labelframe(window, text="Backup")
     frm_backup.pack(padx=4, pady=4, fill="x")
@@ -104,6 +121,12 @@ def backup_form(BASE_URL:str, api_key:str):
 
     frm_restoreops = ttk.Labelframe(window, text="Restore Operations")
     frm_restoreops.pack(padx=4, pady=4, fill="x")
+
+    frm_push = ttk.Labelframe(window, text="Push (from local to server)")
+    frm_push.pack(padx=4, pady=4, fill="x")
+
+    frm_pull = ttk.Labelframe(window, text="Pull (from server to local)")
+    frm_pull.pack(padx=4, pady=4, fill="x")
 
     # Backup Frame
     txt_backup_folder = ttk.Entry(frm_backup, textvariable=v_backup_folder, width=40)
@@ -132,3 +155,17 @@ def backup_form(BASE_URL:str, api_key:str):
 
     cnt_restore_results = ttk.Frame(frm_restoreops)
     cnt_restore_results.grid(column=0, row=1, padx=4, pady=4, columnspan=50)
+
+    # Push Operations Frame
+    btn_push_prefixes = ttk.Button(frm_push, text="Push Prefixes", command=cmd_push_prefixes)
+    btn_push_prefixes.grid(row=0, column=0, padx=4, pady=4)
+
+    btn_push_tickets = ttk.Button(frm_push, text="Push Tickets", command=cmd_push_tickets)
+    btn_push_tickets.grid(row=0, column=1, padx=4, pady=4)
+
+    btn_push_baskets = ttk.Button(frm_push, text="Push Baskets", command=cmd_push_baskets)
+    btn_push_baskets.grid(row=0, column=2, padx=4, pady=4)
+
+    # Pull Operations Frame
+    btn_pull_prefixes = ttk.Button(frm_pull, text="Pull Prefixes", command=cmd_pull_prefixes)
+    btn_pull_prefixes.grid(row=0, column=0, padx=4, pady=4)

@@ -487,6 +487,9 @@ if __name__ == "__main__":
             ibackup(BASE_URL, api_key, sys.argv[2], minutes)
         elif sys.argv[1] == "restore":
             print(restore(BASE_URL, api_key, sys.argv[2]))
+        elif sys.argv[1] == "makeportable":
+            open("config.ini", "a").close()
+            open("data.db", "a").close()
         else:
             main()
     else:
