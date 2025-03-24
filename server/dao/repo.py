@@ -1,6 +1,5 @@
 from .models import *
 from .db import session, DB_TYPE, rand
-from .exceptions import ItemNotFound
 
 class Repository[I]:
     """Container for all other repository items"""
@@ -17,7 +16,7 @@ class PrefixRepo(Repository[Prefix]):
         conn.close()
         if not r:
             return {}
-        return Prefix(prefix=r[0], bootstyle=r[1], sort_order=r[2])
+        return Prefix(*r)
     def get_all(self) -> list[Prefix]:
         conn, cur = session()
         stmt = "SELECT * FROM prefixes"
@@ -25,8 +24,7 @@ class PrefixRepo(Repository[Prefix]):
         results = cur.fetchall()
         if not results:
             return []
-        l = [Prefix(prefix=r[0], bootstyle=r[1], sort_order=r[2]) for r in results]
-        return l
+        return [Prefix(*r) for r in results]
     def add(self, p:Prefix) -> str:
         conn, cur = session()
         stmt_insert = "INSERT INTO prefixes (bootstyle, sort_order, prefix) VALUES (?, ?, ?)"
@@ -70,7 +68,7 @@ class TicketRepo(Repository[Ticket]):
         r = cur.fetchone()
         if not r:
             return {}
-        return Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5])
+        return Ticket(*r)
     def get_range(self, prefix:str, id_from:int, id_to:int) -> list[Ticket]:
         conn, cur = session()
         stmt = "SELECT * FROM tickets WHERE prefix = ? AND ticket_id BETWEEN ? AND ?"
@@ -82,8 +80,7 @@ class TicketRepo(Repository[Ticket]):
         conn.close()
         if not results:
             return []
-        l = [Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5]) for r in results]
-        return l
+        return [Ticket(*r) for r in results]
     def get_all(self, prefix:str) -> list[Ticket]:
         conn, cur = session()
         stmt = "SELECT * FROM tickets WHERE prefix = ?"
@@ -94,8 +91,7 @@ class TicketRepo(Repository[Ticket]):
         results = cur.fetchall()
         if not results:
             return []
-        l = [Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5]) for r in results]
-        return l
+        return [Ticket(*r) for r in results]
     def get_all_prefixes(self) -> list[Ticket]:
         conn, cur = session()
         stmt = "SELECT * FROM tickets"
@@ -103,8 +99,7 @@ class TicketRepo(Repository[Ticket]):
         results = cur.fetchall()
         if not results:
             return []
-        l = [Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5]) for r in results]
-        return l
+        return [Ticket(*r) for r in results]
     def get_random(self, prefix:str) -> Ticket:
         conn, cur = session()
         stmt = f"SELECT * FROM tickets WHERE prefix = ? ORDER BY {rand()} LIMIT 1"
@@ -115,7 +110,7 @@ class TicketRepo(Repository[Ticket]):
         r = cur.fetchone()
         if not r:
             return {}
-        return Ticket(prefix=r[0], ticket_id=r[1], first_name=r[2], last_name=r[3], phone_number=r[4], preference=r[5])
+        return Ticket(*r)
     def add(self, t:Ticket) -> str:
         conn, cur = session()
         stmt_insert = "INSERT INTO tickets (first_name, last_name, phone_number, preference, prefix, ticket_id) VALUES (?, ?, ?, ?, ?, ?)"
@@ -145,7 +140,7 @@ class BasketRepo(Repository[Basket]):
         conn.close()
         if not r:
             return {}
-        return Basket(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4])
+        return Basket(*r)
     def get_range(self, prefix:str, id_from:int, id_to:int) -> list[Basket]:
         conn, cur = session()
         stmt = "SELECT * FROM baskets WHERE prefix = ? AND basket_id BETWEEN ? AND ?"
@@ -157,8 +152,7 @@ class BasketRepo(Repository[Basket]):
         conn.close()
         if not results:
             return []
-        l = [Basket(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4]) for r in results]
-        return l
+        return [Basket(*r) for r in results]
     def get_all(self, prefix:str) -> list[Basket]:
         conn, cur = session()
         stmt = "SELECT * FROM baskets WHERE prefix = ?"
@@ -170,8 +164,7 @@ class BasketRepo(Repository[Basket]):
         conn.close()
         if not results:
             return []
-        l = [Basket(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4]) for r in results]
-        return l
+        return [Basket(*r) for r in results]
     def get_all_prefixes(self):
         conn, cur = session()
         stmt = "SELECT * FROM baskets"
@@ -179,8 +172,7 @@ class BasketRepo(Repository[Basket]):
         results = cur.fetchall()
         if not results:
             return []
-        l = [Basket(*r) for r in results]
-        return l
+        return [Basket(*r) for r in results]
     def add(self, b:Basket) -> str:
         conn, cur = session()
         stmt_insert = "INSERT INTO baskets (description, donors, winning_ticket, prefix, basket_id) VALUES (?, ?, ?, ?, ?)"
@@ -224,8 +216,7 @@ class WinnerRepo(Repository[BasketWinner]):
         r = cur.fetchone()
         if not r:
             return {}
-        return BasketWinner(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4],
-        winner_name=r[5], phone_number=r[6], preference=r[7])
+        return BasketWinner(*r)
     def get_basket_range(self, prefix:str, id_from:int, id_to:int) -> list[BasketWinner]:
         conn, cur = session()
         stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND basket_id BETWEEN ? AND ?"
@@ -237,9 +228,7 @@ class WinnerRepo(Repository[BasketWinner]):
         conn.close()
         if not results:
             return []
-        l = [BasketWinner(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4],
-        winner_name=r[5], phone_number=r[6], preference=r[7]) for r in results]
-        return l
+        return [BasketWinner(*r) for r in results]
     def get_all(self, prefix:str, preference:str=None) -> list[BasketWinner]:
         conn, cur = session()
         stmt = "SELECT * FROM basket_winners WHERE prefix = ?"
@@ -254,9 +243,7 @@ class WinnerRepo(Repository[BasketWinner]):
         conn.close()
         if not results:
             return []
-        l = [BasketWinner(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4],
-        winner_name=r[5], phone_number=r[6], preference=r[7]) for r in results]
-        return l
+        return [BasketWinner(*r) for r in results]
     def get_all_byname(self, prefix:str, preference:str=None) -> list[BasketWinner]:
         conn, cur = session()
         stmt = "SELECT * FROM basket_winners WHERE prefix = ?"
@@ -272,9 +259,7 @@ class WinnerRepo(Repository[BasketWinner]):
         conn.close()
         if not results:
             return []
-        l = [BasketWinner(prefix=r[0], basket_id=r[1], description=r[2], donors=r[3], winning_ticket=r[4],
-        winner_name=r[5], phone_number=r[6], preference=r[7]) for r in results]
-        return l
+        return [BasketWinner(*r) for r in results]
 
 class CountsRepo(Repository[Counts]):
     def get_counts(self) -> list[Counts]:
@@ -282,7 +267,7 @@ class CountsRepo(Repository[Counts]):
         stmt = "SELECT * FROM ticket_counts"
         cur.execute(stmt)
         results = cur.fetchall()
+        conn.close()
         if not results:
             return []
-        l = [Counts(prefix=r[0].capitalize(), total=r[1], unique=r[2]) for r in results]
-        return l
+        return [Counts(*r) for r in results]

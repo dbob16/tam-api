@@ -19,7 +19,7 @@ class PrefixRepo(Repository):
             response = httpx.get(f"{self.BASE_URL}prefixes/{prefix}/", params={"api_key": self.api_key}, verify=False)
             if response.status_code == 200:
                 body = response.json()
-                return Prefix(body)
+                return Prefix(**body)
         self.create_table()
         stmt = "SELECT * FROM prefixes WHERE prefix = ?"
         data = (prefix,)
@@ -32,8 +32,9 @@ class PrefixRepo(Repository):
             if response.status_code == 200:
                 body = response.json()
             if body:
-                r_r = [Prefix(r) for r in body]
+                r_r = [Prefix(**r) for r in body]
                 return r_r
+            return []
         self.create_table()
         stmt = "SELECT * FROM prefixes"
         self.cur.execute(stmt)
@@ -47,7 +48,7 @@ class PrefixRepo(Repository):
         self.cur.execute(stmt, data)
         self.conn.commit()
         if len(self.BASE_URL) > 0:
-            httpx.post(f"{self.BASE_URL}prefix/", json=prefix, params={"api_key": self.api_key}, verify=False)
+            httpx.post(f"{self.BASE_URL}prefix/", json=prefix.__dict__, params={"api_key": self.api_key}, verify=False)
     def del_prefix(self, prefix:str):
         stmt = "DELETE FROM prefixes WHERE prefix = ?"
         data = (prefix,)
@@ -72,22 +73,21 @@ class PrefixRepo(Repository):
         if len(self.BASE_URL) > 0:
             for r in results:
                 cur_item = Prefix(prefix=r[0], bootstyle=r[1], sort_order=r[2])
-                httpx.post(f"{self.BASE_URL}prefix/", json=cur_item, params={"api_key": self.api_key}, verify=False)
+                httpx.post(f"{self.BASE_URL}prefix/", json=cur_item.__dict__, params={"api_key": self.api_key}, verify=False)
     def sync(self):
         self.push()
         self.pull()
 
 class TicketRepo(Repository):
     def create_table(self):
-        stmt = """CREATE TABLE IF NOT EXISTS tickets (
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
         prefix TEXT,
         ticket_id INTEGER,
         first_name TEXT,
         last_name TEXT,
         phone_number TEXT,
         preference TEXT,
-        PRIMARY KEY (prefix, ticket_id))"""
-        self.cur.execute(stmt)
+        PRIMARY KEY (prefix, ticket_id))""")
         self.conn.commit()
     def get_one(self, prefix:str, ticket_id:int):
         if len(self.BASE_URL) > 0:
@@ -97,6 +97,7 @@ class TicketRepo(Repository):
             if body:
                 r_r = Ticket(**body)
                 return r_r
+            return Ticket(prefix, ticket_id)
         self.create_table()
         stmt = "SELECT * FROM tickets WHERE prefix = ? AND ticket_id = ?"
         data = (prefix, ticket_id)
@@ -108,12 +109,13 @@ class TicketRepo(Repository):
         return l_r
     def get_range(self, prefix:str, id_from:int, id_to:int):
         if len(self.BASE_URL) > 0:
-            response = httpx.get(f"{self.BASE_URL}tickets/{id_from}/{id_to}/", params=self.params, verify=False)
+            response = httpx.get(f"{self.BASE_URL}tickets/{prefix}/{id_from}/{id_to}/", params=self.params, verify=False)
             if response.status_code == 200:
                 body = response.json()
             if body:
                 r_r = [Ticket(**r) for r in body]
                 return r_r
+            return []
         self.create_table()
         stmt = "SELECT * FROM tickets WHERE prefix = ? AND ticket_id BETWEEN ? and ?"
         data = (prefix, id_from, id_to)
@@ -129,6 +131,7 @@ class TicketRepo(Repository):
             if body:
                 r_r = [Ticket(**r) for r in body]
                 return r_r
+            return []
         self.create_table()
         stmt = "SELECT * FROM tickets WHERE prefix = ?"
         data = (prefix,)
@@ -161,6 +164,7 @@ class TicketRepo(Repository):
             if body:
                 r_r = [Ticket(**r) for r in body]
                 return r_r
+            return []
         self.create_table()
         stmt = "SELECT * FROM tickets"
         self.cur.execute(stmt)
@@ -174,7 +178,7 @@ class TicketRepo(Repository):
         self.cur.execute(stmt, data)
         self.conn.commit()
         if len(self.BASE_URL) > 0:
-            httpx.post(f"{self.BASE_URL}ticket/", json=t, params=self.params, verify=False)
+            httpx.post(f"{self.BASE_URL}ticket/", json=t.__dict__, params=self.params, verify=False)
     def add_list(self, l:list[Ticket]):
         self.create_table()
         stmt = "REPLACE INTO tickets VALUES (?, ?, ?, ?, ?, ?)"
@@ -183,14 +187,17 @@ class TicketRepo(Repository):
             self.cur.execute(stmt, data)
         self.conn.commit()
         if len(self.BASE_URL) > 0:
-            httpx.post(f"{self.BASE_URL}tickets/", json=l, params=self.params, verify=False)
+            out_list = [r.__dict__ for r in l]
+            httpx.post(f"{self.BASE_URL}tickets/", json=out_list, params=self.params, verify=False)
     def push(self):
         self.create_table()
         stmt = "SELECT * FROM tickets"
         self.cur.execute(stmt)
         results = self.cur.fetchall()
-        l_l = [Ticket(*r) for r in results]
-        httpx.post(f"{self.BASE_URL}tickets/", json=l_l, params=self.params, verify=False)
+        l_r = [Ticket(*r) for r in results]
+        if len(self.BASE_URL) > 0:
+            out_list = [r.__dict__ for r in l_r]
+            httpx.post(f"{self.BASE_URL}tickets/", json=out_list, params=self.params, verify=False)
 
 class BasketRepo(Repository):
     def create_table(self):
@@ -210,6 +217,7 @@ class BasketRepo(Repository):
             if body:
                 r_r = Basket(**body)
                 return r_r
+            return Basket(prefix, basket_id)
         self.create_table()
         stmt = "SELECT * FROM baskets WHERE prefix = ? AND basket_id = ?"
         data = (prefix, basket_id)
@@ -227,6 +235,7 @@ class BasketRepo(Repository):
             if body:
                 r_r = [Basket(**r) for r in body]
                 return r_r
+            return []
         self.create_table()
         stmt = "SELECT * FROM baskets WHERE prefix = ? AND basket_id BETWEEN ? AND ?"
         data = (prefix, id_from, id_to)
@@ -242,6 +251,7 @@ class BasketRepo(Repository):
             if body:
                 r_r = [Basket(**r) for r in body]
                 return r_r
+            return []
         self.create_table()
         stmt = "SELECT * FROM baskets WHERE prefix = ?"
         data = (prefix,)
@@ -257,6 +267,7 @@ class BasketRepo(Repository):
             if body:
                 r_r = [Basket(**r) for r in body]
                 return r_r
+            return []
         self.create_table()
         stmt = "SELECT * FROM baskets"
         self.cur.execute(stmt)
@@ -270,7 +281,7 @@ class BasketRepo(Repository):
         self.cur.execute(stmt, data)
         self.conn.commit()
         if len(self.BASE_URL) > 0:
-            httpx.post(f"{BASE_URL}basket/", json=b, params=self.params, verify=False)
+            httpx.post(f"{BASE_URL}basket/", json=b.__dict__, params=self.params, verify=False)
     def add_list(self, l:list[Basket]):
         self.create_table()
         stmt = "REPLACE INTO baskets VALUES (?, ?, ?, ?, ?)"
@@ -279,7 +290,8 @@ class BasketRepo(Repository):
             self.cur.execute(stmt, data)
         self.conn.commit()
         if len(self.BASE_URL) > 0:
-            httpx.post(f"{self.BASE_URL}baskets/", json=l, params=self.params, verify=False)
+            out_list = [r.__dict__ for r in l]
+            httpx.post(f"{self.BASE_URL}baskets/", json=out_list, params=self.params, verify=False)
     def update_winner(self, prefix:str, basket_id:int, winning_ticket:int):
         existing = self.get_one(prefix, basket_id)
         existing.winning_ticket = winning_ticket
@@ -291,7 +303,8 @@ class BasketRepo(Repository):
         results = self.cur.fetchall()
         l_r = [Basket(*r) for r in results]
         if len(self.BASE_URL) > 0:
-            httpx.post(f"{self.BASE_URL}baskets/", json=l_r, params=self.params, verify=False)
+            out_list = [r.__dict__ for r in l_r]
+            httpx.post(f"{self.BASE_URL}baskets/", json=out_list, params=self.params, verify=False)
 
 class WinnerRepo(Repository):
     def create_view(self):
@@ -349,19 +362,45 @@ class WinnerRepo(Repository):
         results = self.cur.fetchall()
         l_r = [BasketWinner(*r) for r in results]
         return l_r
-    def report_byname(self, prefix:str, preference:str="%"):
+    def report_byname(self, prefix:str, preference:str=None):
         self.create_view()
-        stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND preference = ? ORDER BY winner_name, phone_number, winning_ticket"
-        data = (prefix, preference)
+        if preference:
+            stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND preference = ? ORDER BY winner_name, phone_number, winning_ticket"
+            data = (prefix, preference)
+        else:
+            stmt = "SELECT * FROM basket_winners WHERE prefix = ? ORDER BY winner_name, phone_number, winning_ticket"
+            data = (prefix,)
         self.cur.execute(stmt, data)
         results = self.cur.fetchall()
         l_r = [BasketWinner(*r) for r in results]
         return l_r
-    def report_bybasket(self, prefix:str, preference:str="%"):
+    def report_bybasket(self, prefix:str, preference:str=None):
         self.create_view()
-        stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND preference = ?"
-        data = (prefix, preference)
+        if preference:
+            stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND preference = ?"
+            data = (prefix, preference)
+        else:
+            stmt = "SELECT * FROM basket_winners WHERE prefix = ?"
+            data = (prefix,)
         self.cur.execute(stmt, data)
         results = self.cur.fetchall()
         l_r = [BasketWinner(*r) for r in results]
+        return l_r
+
+class CountsRepo(Repository):
+    def create_view(self):
+        self.cur.execute("""CREATE VIEW IF NOT EXISTS ticket_counts AS
+        SELECT prefix, COUNT(*) AS total_buys, COUNT(DISTINCT CONCAT(first_name, last_name, phone_number)) AS unique_buys
+        FROM tickets
+        GROUP BY prefix
+        UNION ALL
+        SELECT "totals", COUNT(*) AS total_buys, COUNT(DISTINCT CONCAT(first_name, last_name, phone_number)) AS unique_buys
+        FROM tickets""")
+        self.conn.commit()
+    def get_counts(self):
+        self.create_view()
+        stmt = "SELECT * FROM ticket_counts"
+        self.cur.execute(stmt)
+        results = self.cur.fetchall()
+        l_r = [Counts(*r) for r in results]
         return l_r

@@ -7,7 +7,7 @@ from dao import *
 from configparser import ConfigParser
 from ttkbootstrap import utility
 from tkinter import filedialog
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from forms import ticket_form, basket_form, drawing_form
 from prefix_manager import prefix_manager
 from api_cleaner import api_cleaner
@@ -82,8 +82,8 @@ def main():
         global high_dpi_obj
         font_size = 12
         high_dpi_obj = utility.enable_high_dpi_awareness(scaling=1.75)
-    # j2_env = Environment(FileSystemLoader(template_dir))
-    # report_template = j2_env.get_template("report.html")
+    j2_env = Environment(loader=FileSystemLoader(template_dir), autoescape=select_autoescape())
+    report_template = j2_env.get_template("report.html")
     window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs['theme'], iconphoto=icon_path)
     v_status = ttk.StringVar(window)
     style = ttk.Style()
@@ -287,25 +287,109 @@ def main():
         drawing_form(BASE_URL, BAND_COLOR, api_key, cmb_prefix.get(), prefixes)
 
     def cmd_byname_text():
-        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=text")
+        if len(BASE_URL) > 0:
+            webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=text")
+        else:
+            maintitle = f"{cmb_prefix.get()} Basket Winners by Name"
+            title = "Winners Preferring Texts"
+            headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
+            repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
+            results = repo.report_byname(prefix=cmb_prefix.get().lower(), preference="TEXT")
+            records = [(r.winner_name, r.phone_number, r.basket_id, r.winning_ticket, r.description) for r in results]
+            out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
+            with open("output.html", "w") as f:
+                f.write(out_file)
+            webbrowser.open("output.html")
 
     def cmd_byname_call():
-        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=call")
+        if len(BASE_URL) > 0:
+            webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=call")
+        else:
+            maintitle = f"{cmb_prefix.get()} Basket Winners by Name"
+            title = "Winners Preferring Calls"
+            headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
+            repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
+            results = repo.report_byname(prefix=cmb_prefix.get().lower(), preference="CALL")
+            records = [(r.winner_name, r.phone_number, r.basket_id, r.winning_ticket, r.description) for r in results]
+            out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
+            with open("output.html", "w") as f:
+                f.write(out_file)
+            webbrowser.open("output.html")
 
     def cmd_byname_both():
-        webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}")
+        if len(BASE_URL) > 0:
+            webbrowser.open(f"{BASE_URL}reports/byname/{cmb_prefix.get().lower()}/?api_key={api_key}")
+        else:
+            maintitle = f"{cmb_prefix.get()} Basket Winners by Name"
+            title = "All Preferences"
+            headers = ("Winner Name", "Phone Number", "Basket #", "Ticket #", "Description")
+            repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
+            results = repo.report_byname(prefix=cmb_prefix.get().lower())
+            records = [(r.winner_name, r.phone_number, r.basket_id, r.winning_ticket, r.description) for r in results]
+            out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
+            with open("output.html", "w") as f:
+                f.write(out_file)
+            webbrowser.open("output.html")
 
     def cmd_bybasket_text():
-        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=text")
+        if len(BASE_URL) > 0:
+            webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=text")
+        else:
+            maintitle = f"{cmb_prefix.get()} Basket Winners by Basket #"
+            title = "Winners Preferring Texts"
+            headers = ("Basket #", "Basket Description", "Ticket #", "Winner Name", "Phone Number")
+            repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
+            results = repo.report_bybasket(prefix=cmb_prefix.get().lower(), preference="TEXT")
+            records = [(r.basket_id, r.description, r.winning_ticket, r.winner_name, r.phone_number) for r in results]
+            out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
+            with open("output.html", "w") as f:
+                f.write(out_file)
+            webbrowser.open("output.html")
 
     def cmd_bybasket_call():
-        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=call")
+        if len(BASE_URL) > 0:
+            webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}&filter=call")
+        else:
+            maintitle = f"{cmb_prefix.get()} Basket Winners by Basket #"
+            title = "Winners Preferring Calls"
+            headers = ("Basket #", "Basket Description", "Ticket #", "Winner Name", "Phone Number")
+            repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
+            results = repo.report_bybasket(prefix=cmb_prefix.get().lower(), preference="CALL")
+            records = [(r.basket_id, r.description, r.winning_ticket, r.winner_name, r.phone_number) for r in results]
+            out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
+            with open("output.html", "w") as f:
+                f.write(out_file)
+            webbrowser.open("output.html")
 
     def cmd_bybasket_both():
-        webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}")
+        if len(BASE_URL) > 0:
+            webbrowser.open(f"{BASE_URL}reports/bybasket/{cmb_prefix.get().lower()}/?api_key={api_key}")
+        else:
+            maintitle = f"{cmb_prefix.get()} Basket Winners by Basket #"
+            title = "All Preferences"
+            headers = ("Basket #", "Basket Description", "Ticket #", "Winner Name", "Phone Number")
+            repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
+            results = repo.report_bybasket(prefix=cmb_prefix.get().lower())
+            records = [(r.basket_id, r.description, r.winning_ticket, r.winner_name, r.phone_number) for r in results]
+            out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
+            with open("output.html", "w") as f:
+                f.write(out_file)
+            webbrowser.open("output.html")
 
     def cmd_view_counts():
-        webbrowser.open(f"{BASE_URL}reports/counts/?api_key={api_key}")
+        if len(BASE_URL) > 0:
+            webbrowser.open(f"{BASE_URL}reports/counts/?api_key={api_key}")
+        else:
+            maintitle = "Ticket Counts"
+            title = "Lists ticket counts"
+            headers = ("Prefix", "All Ticket Lines", "Unique Buyers")
+            repo = CountsRepo()
+            results = repo.get_counts()
+            records = [(r.prefix.capitalize(), r.total, r.unique) for r in results]
+            out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
+            with open("output.html", "w") as f:
+                f.write(out_file)
+            webbrowser.open("output.html")
 
     def cmd_backup_form(_=None):
         backup_form(BASE_URL, api_key)

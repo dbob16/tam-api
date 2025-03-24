@@ -33,3 +33,9 @@ class BasketWinner:
     winner_name:str | None = "No Winner"
     phone_number:str | None = ""
     preference:str | None = ""
+
+@dataclass
+class Counts:
+    prefix:str
+    total:int
+    unique:int
