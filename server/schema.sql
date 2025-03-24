@@ -33,7 +33,7 @@ FROM tickets;
 CREATE VIEW IF NOT EXISTS basket_winners AS
 SELECT b.*, CONCAT(t.last_name, ", ", t.first_name) AS winner_name, t.phone_number, t.preference
 FROM baskets AS b
-JOIN tickets AS t
+LEFT JOIN tickets AS t
 ON b.prefix = t.prefix AND b.winning_ticket = t.ticket_id
 ORDER BY b.prefix, b.basket_id;
 
