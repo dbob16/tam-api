@@ -17,7 +17,7 @@ services:
       retries: 3
     restart: always
   tam:
-    image: dbob16/tam-server
+    image: dbob16/tam-server:2.0
     container_name: tam1
     depends_on:
       mariadb:
@@ -26,7 +26,7 @@ services:
     environment:
       API_PW: ${API_PW}
       SS_MODE: ${SS_MODE}
-      DB_TYPE: MYSQL
+      DB_TYPE: MARIADB
       MARIADB_HOST: mariadb
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASSWORD}
@@ -42,27 +42,27 @@ services:
     restart: always
 
 # Enable ssl by uncommenting these following lines and putting nginx.crt (server certificate) and nginx.key (server key) in certs
-  # nginx:
-  #   image: nginx
-  #   container_name: nginx-tam-rp
-  #   depends_on:
-  #     mariadb:
-  #       condition: service_started
-  #       restart: true
-  #     tam:
-  #       condition: service_started
-  #       restart: true
-  #   network_mode: host
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-  #     - ./certs:/etc/nginx/certs:ro
-  #   healthcheck:
-  #     test: ["CMD", "service", "nginx", "status"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 3
-  #     start_period: 5s
-  #   restart: always
+  nginx:
+    image: nginx
+    container_name: nginx-tam-rp
+    depends_on:
+      mariadb:
+        condition: service_started
+        restart: true
+      tam:
+        condition: service_started
+        restart: true
+    network_mode: host
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD", "service", "nginx", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: always
 
 # Enable restarting of unhealthy services by uncommenting the following lines:
   # autoheal:

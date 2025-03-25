@@ -34,6 +34,12 @@ else:
         os.mkdir(f"{home_path}/.config/TAM")
     config_path = f"{home_path}/.config/TAM/config.ini"
 
+def save_report(report):
+    save_to_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("Web Page", "*.html")])
+    with open(save_to_path, "w") as f:
+        f.write(report)
+    return save_to_path
+
 def refresh_config():
     config = ConfigParser()
     global server
@@ -297,9 +303,8 @@ def main():
             results = repo.report_byname(prefix=cmb_prefix.get().lower(), preference="TEXT")
             records = [(r.winner_name, r.phone_number, r.basket_id, r.winning_ticket, r.description) for r in results]
             out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
-            with open("output.html", "w") as f:
-                f.write(out_file)
-            webbrowser.open("output.html")
+            report_path = save_report(out_file)
+            webbrowser.open(report_path)
 
     def cmd_byname_call():
         if len(BASE_URL) > 0:
@@ -312,9 +317,8 @@ def main():
             results = repo.report_byname(prefix=cmb_prefix.get().lower(), preference="CALL")
             records = [(r.winner_name, r.phone_number, r.basket_id, r.winning_ticket, r.description) for r in results]
             out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
-            with open("output.html", "w") as f:
-                f.write(out_file)
-            webbrowser.open("output.html")
+            report_path = save_report(out_file)
+            webbrowser.open(report_path)
 
     def cmd_byname_both():
         if len(BASE_URL) > 0:
@@ -327,9 +331,8 @@ def main():
             results = repo.report_byname(prefix=cmb_prefix.get().lower())
             records = [(r.winner_name, r.phone_number, r.basket_id, r.winning_ticket, r.description) for r in results]
             out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
-            with open("output.html", "w") as f:
-                f.write(out_file)
-            webbrowser.open("output.html")
+            report_path = save_report(out_file)
+            webbrowser.open(report_path)
 
     def cmd_bybasket_text():
         if len(BASE_URL) > 0:
@@ -342,9 +345,8 @@ def main():
             results = repo.report_bybasket(prefix=cmb_prefix.get().lower(), preference="TEXT")
             records = [(r.basket_id, r.description, r.winning_ticket, r.winner_name, r.phone_number) for r in results]
             out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
-            with open("output.html", "w") as f:
-                f.write(out_file)
-            webbrowser.open("output.html")
+            report_path = save_report(out_file)
+            webbrowser.open(report_path)
 
     def cmd_bybasket_call():
         if len(BASE_URL) > 0:
@@ -357,9 +359,8 @@ def main():
             results = repo.report_bybasket(prefix=cmb_prefix.get().lower(), preference="CALL")
             records = [(r.basket_id, r.description, r.winning_ticket, r.winner_name, r.phone_number) for r in results]
             out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
-            with open("output.html", "w") as f:
-                f.write(out_file)
-            webbrowser.open("output.html")
+            report_path = save_report(out_file)
+            webbrowser.open(report_path)
 
     def cmd_bybasket_both():
         if len(BASE_URL) > 0:
@@ -372,9 +373,8 @@ def main():
             results = repo.report_bybasket(prefix=cmb_prefix.get().lower())
             records = [(r.basket_id, r.description, r.winning_ticket, r.winner_name, r.phone_number) for r in results]
             out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
-            with open("output.html", "w") as f:
-                f.write(out_file)
-            webbrowser.open("output.html")
+            report_path = save_report(out_file)
+            webbrowser.open(report_path)
 
     def cmd_view_counts():
         if len(BASE_URL) > 0:
@@ -387,9 +387,8 @@ def main():
             results = repo.get_counts()
             records = [(r.prefix.capitalize(), r.total, r.unique) for r in results]
             out_file = report_template.render(maintitle=maintitle, title=title, headers=headers, records=records)
-            with open("output.html", "w") as f:
-                f.write(out_file)
-            webbrowser.open("output.html")
+            report_path = save_report(out_file)
+            webbrowser.open(report_path)
 
     def cmd_backup_form(_=None):
         backup_form(BASE_URL, api_key)
