@@ -7,20 +7,18 @@ import asyncio
 from httpx import get, post
 from datetime import datetime 
 from tkinter import filedialog
-from dao import PrefixRepo, TicketRepo, BasketRepo
+from dao import PrefixRepo, Prefix, TicketRepo, Ticket, BasketRepo, Basket
 
 interval_started = False
 
 def backup(BASE_URL:str, api_key:str, backup_folder:str):
     out_file = {}
-    response = get(f"{BASE_URL}prefixes/", params={"api_key": api_key}, verify=False)
-    prefix_list = response.json()
-    out_file["prefixes"] = prefix_list
-    for prefix in prefix_list:
-        response = get(f"{BASE_URL}tickets/{prefix['prefix']}/", params={"api_key": api_key}, verify=False)
-        out_file[f"{prefix['prefix']}_tickets"] = response.json()
-        response = get(f"{BASE_URL}baskets/{prefix['prefix']}/", params={"api_key": api_key}, verify=False)
-        out_file[f"{prefix['prefix']}_baskets"] = response.json()
+    repo = PrefixRepo(BASE_URL=BASE_URL, api_key=api_key)
+    out_file["prefixes"] = [r.__dict__ for r in repo.get_all()]
+    repo = TicketRepo(BASE_URL=BASE_URL, api_key=api_key)
+    out_file["tickets"] = [r.__dict__ for r in repo.get_all_prefixes()]
+    repo = BasketRepo(BASE_URL=BASE_URL, api_key=api_key)
+    out_file["baskets"] = [r.__dict__ for r in repo.get_all_prefixes()]
     now = datetime.now().isoformat(timespec="seconds")
     j = json.dumps(out_file).encode('utf-8')
     with gzip.open(os.path.join(backup_folder, f"{now}.json.gz"), "w") as file:
@@ -37,18 +35,12 @@ def ibackup(BASE_URL:str, api_key:str, backup_folder:str, minutes:int):
 
 def restore(BASE_URL:str, api_key:str, restore_file:str):
     with gzip.open(restore_file, "r") as file:
-        in_file = file.read().decode("utf-8")
-        in_dict = json.loads(in_file)
-    for prefix in in_dict["prefixes"]:
-        response = post(f"{BASE_URL}prefix/", params={"api_key": api_key}, json=prefix)
-        if response.status_code != 200:
-            return response.json()
-        response = post(f"{BASE_URL}tickets/", params={"api_key": api_key}, json=in_dict[f"{prefix['prefix']}_tickets"])
-        if response.status_code != 200:
-            return response.json()
-        response = post(f"{BASE_URL}baskets/", params={"api_key": api_key}, json=in_dict[f"{prefix['prefix']}_baskets"])
-        if response.status_code != 200:
-            return response.json()
+        in_dict = json.loads(file.read().decode("utf-8"))
+    prefix_repo, ticket_repo, basket_repo = PrefixRepo(BASE_URL=BASE_URL, api_key=api_key), TicketRepo(BASE_URL=BASE_URL, api_key=api_key), BasketRepo(BASE_URL=BASE_URL, api_key=api_key)
+    for p in in_dict["prefixes"]:
+        prefix_repo.add_prefix(Prefix(**p))
+    ticket_repo.add_list([Ticket(**r) for r in in_dict["tickets"]])
+    basket_repo.add_list([Basket(**r) for r in in_dict["baskets"]])
     if os.name == "nt":
         if "\\" in restore_file:
             filename = restore_file.split("\\")[-1]

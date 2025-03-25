@@ -145,8 +145,7 @@ class TicketRepo(Repository):
             if response.status_code == 200:
                 body = response.json()
             if body:
-                r_r = [Ticket(**r) for r in body]
-                return r_r
+                return Ticket(**body)
         self.create_table()
         stmt = "SELECT * FROM tickets WHERE prefix = ? ORDER BY random() LIMIT 1"
         data = (prefix,)
@@ -281,7 +280,7 @@ class BasketRepo(Repository):
         self.cur.execute(stmt, data)
         self.conn.commit()
         if len(self.BASE_URL) > 0:
-            httpx.post(f"{BASE_URL}basket/", json=b.__dict__, params=self.params, verify=False)
+            httpx.post(f"{self.BASE_URL}basket/", json=b.__dict__, params=self.params, verify=False)
     def add_list(self, l:list[Basket]):
         self.create_table()
         stmt = "REPLACE INTO baskets VALUES (?, ?, ?, ?, ?)"
