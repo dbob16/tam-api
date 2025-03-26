@@ -20,7 +20,6 @@ class PrefixRepo(Repository):
             if response.status_code == 200:
                 body = response.json()
                 return Prefix(**body)
-        self.create_table()
         stmt = "SELECT * FROM prefixes WHERE prefix = ?"
         data = (prefix,)
         self.cur.execute(stmt, data)
@@ -35,14 +34,12 @@ class PrefixRepo(Repository):
                 r_r = [Prefix(**r) for r in body]
                 return r_r
             return []
-        self.create_table()
         stmt = "SELECT * FROM prefixes"
         self.cur.execute(stmt)
         l_r = self.cur.fetchall()
         l_r = [Prefix(*r) for r in l_r]
         return l_r
     def add_prefix(self, prefix:Prefix):
-        self.create_table()
         stmt = "REPLACE INTO prefixes VALUES (?, ?, ?)"
         data = (prefix.prefix, prefix.bootstyle, prefix.sort_order)
         self.cur.execute(stmt, data)
@@ -98,7 +95,6 @@ class TicketRepo(Repository):
                 r_r = Ticket(**body)
                 return r_r
             return Ticket(prefix, ticket_id)
-        self.create_table()
         stmt = "SELECT * FROM tickets WHERE prefix = ? AND ticket_id = ?"
         data = (prefix, ticket_id)
         self.cur.execute(stmt, data)
@@ -116,7 +112,6 @@ class TicketRepo(Repository):
                 r_r = [Ticket(**r) for r in body]
                 return r_r
             return []
-        self.create_table()
         stmt = "SELECT * FROM tickets WHERE prefix = ? AND ticket_id BETWEEN ? and ?"
         data = (prefix, id_from, id_to)
         self.cur.execute(stmt, data)
@@ -132,7 +127,6 @@ class TicketRepo(Repository):
                 r_r = [Ticket(**r) for r in body]
                 return r_r
             return []
-        self.create_table()
         stmt = "SELECT * FROM tickets WHERE prefix = ?"
         data = (prefix,)
         self.cur.execute(stmt, data)
@@ -146,7 +140,6 @@ class TicketRepo(Repository):
                 body = response.json()
             if body:
                 return Ticket(**body)
-        self.create_table()
         stmt = "SELECT * FROM tickets WHERE prefix = ? ORDER BY random() LIMIT 1"
         data = (prefix,)
         self.cur.execute(stmt, data)
@@ -164,14 +157,12 @@ class TicketRepo(Repository):
                 r_r = [Ticket(**r) for r in body]
                 return r_r
             return []
-        self.create_table()
         stmt = "SELECT * FROM tickets"
         self.cur.execute(stmt)
         results = self.cur.fetchall()
         l_r = [Ticket(*r) for r in results]
         return l_r
     def add(self, t:Ticket):
-        self.create_table()
         stmt = "REPLACE INTO tickets VALUES (?, ?, ?, ?, ?, ?)"
         data = (t.prefix, t.ticket_id, t.first_name, t.last_name, t.phone_number, t.preference)
         self.cur.execute(stmt, data)
@@ -179,7 +170,6 @@ class TicketRepo(Repository):
         if len(self.BASE_URL) > 0:
             httpx.post(f"{self.BASE_URL}ticket/", json=t.__dict__, params=self.params, verify=False)
     def add_list(self, l:list[Ticket]):
-        self.create_table()
         stmt = "REPLACE INTO tickets VALUES (?, ?, ?, ?, ?, ?)"
         for i in l:
             data = (i.prefix, i.ticket_id, i.first_name, i.last_name, i.phone_number, i.preference)
@@ -189,7 +179,6 @@ class TicketRepo(Repository):
             out_list = [r.__dict__ for r in l]
             httpx.post(f"{self.BASE_URL}tickets/", json=out_list, params=self.params, verify=False)
     def push(self):
-        self.create_table()
         stmt = "SELECT * FROM tickets"
         self.cur.execute(stmt)
         results = self.cur.fetchall()
@@ -217,7 +206,6 @@ class BasketRepo(Repository):
                 r_r = Basket(**body)
                 return r_r
             return Basket(prefix, basket_id)
-        self.create_table()
         stmt = "SELECT * FROM baskets WHERE prefix = ? AND basket_id = ?"
         data = (prefix, basket_id)
         self.cur.execute(stmt, data)
@@ -235,7 +223,6 @@ class BasketRepo(Repository):
                 r_r = [Basket(**r) for r in body]
                 return r_r
             return []
-        self.create_table()
         stmt = "SELECT * FROM baskets WHERE prefix = ? AND basket_id BETWEEN ? AND ?"
         data = (prefix, id_from, id_to)
         self.cur.execute(stmt, data)
@@ -251,7 +238,6 @@ class BasketRepo(Repository):
                 r_r = [Basket(**r) for r in body]
                 return r_r
             return []
-        self.create_table()
         stmt = "SELECT * FROM baskets WHERE prefix = ?"
         data = (prefix,)
         self.cur.execute(stmt, data)
@@ -267,14 +253,12 @@ class BasketRepo(Repository):
                 r_r = [Basket(**r) for r in body]
                 return r_r
             return []
-        self.create_table()
         stmt = "SELECT * FROM baskets"
         self.cur.execute(stmt)
         results = self.cur.fetchall()
         l_r = [Basket(*r) for r in results]
         return l_r
     def add(self, b:Basket):
-        self.create_table()
         stmt = "REPLACE INTO baskets VALUES (?, ?, ?, ?, ?)"
         data = (b.prefix, b.basket_id, b.description, b.donors, b.winning_ticket)
         self.cur.execute(stmt, data)
@@ -282,7 +266,6 @@ class BasketRepo(Repository):
         if len(self.BASE_URL) > 0:
             httpx.post(f"{self.BASE_URL}basket/", json=b.__dict__, params=self.params, verify=False)
     def add_list(self, l:list[Basket]):
-        self.create_table()
         stmt = "REPLACE INTO baskets VALUES (?, ?, ?, ?, ?)"
         for i in l:
             data = (i.prefix, i.basket_id, i.description, i.donors, i.winning_ticket)
@@ -296,7 +279,6 @@ class BasketRepo(Repository):
         existing.winning_ticket = winning_ticket
         self.add(existing)
     def push(self):
-        self.create_table()
         stmt = "SELECT * FROM baskets"
         self.cur.execute(stmt)
         results = self.cur.fetchall()
@@ -322,7 +304,6 @@ class WinnerRepo(Repository):
             if body:
                 r_r = BasketWinner(**body)
                 return r_r
-        self.create_view()
         stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND basket_id = ?"
         data = (prefix, basket_id)
         self.cur.execute(stmt, data)
@@ -339,7 +320,6 @@ class WinnerRepo(Repository):
             if body:
                 r_r = [BasketWinner(**r) for r in body]
                 return r_r
-        self.create_view()
         stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND basket_id BETWEEN ? AND ?"
         data = (prefix, id_from, id_to)
         self.cur.execute(stmt, data)
@@ -354,7 +334,6 @@ class WinnerRepo(Repository):
             if body:
                 r_r = [BasketWinner(**r) for r in body]
                 return r_r
-        self.create_view()
         stmt = "SELECT * FROM basket_winners WHERE prefix = ?"
         data = (prefix,)
         self.cur.execute(stmt, data)
@@ -362,7 +341,6 @@ class WinnerRepo(Repository):
         l_r = [BasketWinner(*r) for r in results]
         return l_r
     def report_byname(self, prefix:str, preference:str=None):
-        self.create_view()
         if preference:
             stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND preference = ? ORDER BY winner_name, phone_number, winning_ticket"
             data = (prefix, preference)
@@ -374,7 +352,6 @@ class WinnerRepo(Repository):
         l_r = [BasketWinner(*r) for r in results]
         return l_r
     def report_bybasket(self, prefix:str, preference:str=None):
-        self.create_view()
         if preference:
             stmt = "SELECT * FROM basket_winners WHERE prefix = ? AND preference = ?"
             data = (prefix, preference)
@@ -397,7 +374,6 @@ class CountsRepo(Repository):
         FROM tickets""")
         self.conn.commit()
     def get_counts(self):
-        self.create_view()
         stmt = "SELECT * FROM ticket_counts"
         self.cur.execute(stmt)
         results = self.cur.fetchall()

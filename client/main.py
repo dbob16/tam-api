@@ -93,6 +93,9 @@ def main():
     window = ttk.Window(title="Ticket Auction Manager Main Menu", themename=prefs['theme'], iconphoto=icon_path)
     v_status = ttk.StringVar(window)
     style = ttk.Style()
+
+    init_local_db()
+
     def reconfig_style():
         style.configure('.', font=("", font_size))
         if HIGH_DPI == "on":
