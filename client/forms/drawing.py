@@ -34,7 +34,10 @@ def drawing_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes
         results = repo.get_basket_range(prefix, v_from.get(), v_to.get())
         if results:
             for r in results:
-                tview.item(r.basket_id, values=[r.basket_id, r.description, r.donors, r.winning_ticket, r.winner_name])
+                if r.winner_name == ", ":
+                    tview.item(r.basket_id, values=[r.basket_id, r.description, r.donors, r.winning_ticket, "No Winner"])
+                else:
+                    tview.item(r.basket_id, values=[r.basket_id, r.description, r.donors, r.winning_ticket, r.winner_name])
         v_id.set(v_from.get())
         tview.selection_set(v_id.get())
         tview.see(tview.selection())
@@ -56,7 +59,10 @@ def drawing_form(BASE_URL:str, BAND_COLOR:str, api_key:str, prefix:str, prefixes
             repo.update_winner(prefix, v_id.get(), v_wt.get())
             repo = WinnerRepo(BASE_URL=BASE_URL, api_key=api_key)
             w = repo.get_basket_one(prefix, v_id.get())
-            tview.item(w.basket_id, values=[w.basket_id, w.description, w.donors, w.winning_ticket, w.winner_name])
+            if w.winner_name == ", ":
+                tview.item(w.basket_id, values=[w.basket_id, w.description, w.donors, w.winning_ticket, "No Winner"])
+            else:
+                tview.item(w.basket_id, values=[w.basket_id, w.description, w.donors, w.winning_ticket, w.winner_name])
 
     def cmd_cancel(_=None):
         r = tview.item(v_id.get())["values"]
